@@ -1,122 +1,202 @@
 /**
- * Student Dashboard Page
+ * Student Dashboard
  * 
- * Server component that displays student's enrolled batches and progress.
- * Uses RLS to automatically filter data.
+ * Server Component for displaying student analytics.
+ * All data fetching happens server-side with RLS enforcement.
  */
 
+import { headers } from 'next/headers';
 import { getStudentDashboard } from '@/lib/data/student-dashboard';
-import { redirect } from 'next/navigation';
 
 export default async function StudentDashboardPage() {
-  try {
-    const dashboardData = await getStudentDashboard();
+  const headersList = await headers();
+  const instituteId = headersList.get('x-institute-id');
+  const userId = headersList.get('x-user-id');
 
+  if (!instituteId || !userId) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">My Dashboard</h1>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">Total Batches</h3>
-            <p className="text-2xl font-bold mt-2">{dashboardData.summary.totalBatches}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">Active Batches</h3>
-            <p className="text-2xl font-bold mt-2">{dashboardData.summary.activeBatches}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">Total Courses</h3>
-            <p className="text-2xl font-bold mt-2">{dashboardData.summary.totalCourses}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-sm font-medium text-gray-500">Average Progress</h3>
-            <p className="text-2xl font-bold mt-2">
-              {dashboardData.summary.averageProgress}%
-            </p>
-          </div>
-        </div>
-
-        {/* Batches List */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-semibold mb-4">My Batches</h2>
-
-          {dashboardData.batches.length === 0 ? (
-            <div className="bg-white p-8 rounded-lg shadow text-center">
-              <p className="text-gray-500">You are not enrolled in any batches yet.</p>
-            </div>
-          ) : (
-            dashboardData.batches.map((batch) => (
-              <div
-                key={batch.id}
-                className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold">{batch.course.name}</h3>
-                    <p className="text-gray-600">{batch.course.code}</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Batch: {batch.name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {new Date(batch.start_date).toLocaleDateString()} -{' '}
-                      {new Date(batch.end_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {batch.progress.progressPercentage}%
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      {batch.progress.completedLessons} / {batch.progress.totalLessons} lessons
-                    </p>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full transition-all"
-                    style={{ width: `${batch.progress.progressPercentage}%` }}
-                  ></div>
-                </div>
-
-                {/* Teachers */}
-                {batch.teachers.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Teachers:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {batch.teachers.map((teacher) => (
-                        <span
-                          key={teacher.id}
-                          className="px-3 py-1 bg-gray-100 rounded-full text-sm"
-                        >
-                          {teacher.first_name} {teacher.last_name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Button */}
-                <div className="mt-4">
-                  <a
-                    href={`/student/batches/${batch.id}`}
-                    className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                  >
-                    View Course
-                  </a>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+        <p>Institute context or authentication required.</p>
       </div>
     );
-  } catch (error) {
-    console.error('Error loading dashboard:', error);
-    redirect('/login');
   }
+
+  // Fetch dashboard data (server-side, respects RLS)
+  let dashboard;
+  try {
+    dashboard = await getStudentDashboard(userId, instituteId);
+  } catch (error) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Error</h1>
+        <p className="text-red-600">
+          {error instanceof Error ? error.message : 'Failed to load dashboard'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <h1 className="text-3xl font-bold">My Dashboard</h1>
+
+      {/* Statistics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Enrolled Courses"
+          value={dashboard.enrolledCoursesCount}
+          icon="📚"
+        />
+        <StatCard
+          title="Overall Progress"
+          value={`${dashboard.totalProgressPercentage.toFixed(1)}%`}
+          icon="📊"
+        />
+        <StatCard
+          title="Certificates"
+          value={dashboard.certificatesCount}
+          icon="🎓"
+        />
+        <StatCard
+          title="Attendance (30 days)"
+          value={`${dashboard.attendanceSummary.attendance_percentage.toFixed(1)}%`}
+          icon="✅"
+        />
+      </div>
+
+      {/* Upcoming Exams */}
+      {dashboard.upcomingExams.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Upcoming Exams</h2>
+          <div className="space-y-3">
+            {dashboard.upcomingExams.map((exam) => (
+              <div
+                key={exam.id}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
+                <div>
+                  <p className="font-medium">{exam.title}</p>
+                  <p className="text-sm text-gray-600">
+                    {exam.course_name} - {exam.batch_name}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium">
+                    {new Date(exam.exam_date).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Assignments */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Upcoming Assignments</h2>
+        {dashboard.recentAssignments.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Assignment
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Course
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Due Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {dashboard.recentAssignments.map((assignment) => (
+                  <tr key={assignment.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {assignment.title}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {assignment.course_name} - {assignment.batch_name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(assignment.due_date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {assignment.submitted ? (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          Submitted
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                          Pending
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-gray-500">No upcoming assignments.</p>
+        )}
+      </div>
+
+      {/* Attendance Summary */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">Attendance Summary (Last 30 Days)</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center">
+            <p className="text-2xl font-bold">{dashboard.attendanceSummary.total_sessions}</p>
+            <p className="text-sm text-gray-600">Total Sessions</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-green-600">
+              {dashboard.attendanceSummary.present_count}
+            </p>
+            <p className="text-sm text-gray-600">Present</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-red-600">
+              {dashboard.attendanceSummary.absent_count}
+            </p>
+            <p className="text-sm text-gray-600">Absent</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-yellow-600">
+              {dashboard.attendanceSummary.late_count}
+            </p>
+            <p className="text-sm text-gray-600">Late</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
+function StatCard({
+  title,
+  value,
+  icon,
+}: {
+  title: string;
+  value: string | number;
+  icon: string;
+}) {
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold mt-2">{value}</p>
+        </div>
+        <div className="text-4xl">{icon}</div>
+      </div>
+    </div>
+  );
+}
