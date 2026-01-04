@@ -30,6 +30,25 @@ export function generateStoragePath(
 }
 
 /**
+ * Generate storage path for assignment submission
+ * 
+ * Path structure: institute/{institute_id}/assignments/{assignment_id}/submissions/{student_id}/{filename}
+ */
+export function generateAssignmentSubmissionPath(
+  instituteId: string,
+  assignmentId: string,
+  studentId: string,
+  filename: string
+): string {
+  // Sanitize filename (remove special characters, keep extension)
+  const sanitizedFilename = filename
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
+    .replace(/_{2,}/g, '_');
+
+  return `institute/${instituteId}/assignments/${assignmentId}/submissions/${studentId}/${sanitizedFilename}`;
+}
+
+/**
  * Upload file to Supabase Storage
  * 
  * @param file - File to upload

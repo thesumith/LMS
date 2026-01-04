@@ -16,7 +16,7 @@ import {
   ConflictError,
 } from '@/lib/errors/api-errors';
 import {
-  generateStoragePath,
+  generateAssignmentSubmissionPath,
   uploadContentFile,
   deleteContentFile,
 } from '@/lib/storage/content';
@@ -125,7 +125,12 @@ export async function POST(
     }
 
     // Generate storage path
-    const storagePath = `institute/${instituteId}/assignments/${assignmentId}/submissions/${userId}/${file.name}`;
+    const storagePath = generateAssignmentSubmissionPath(
+      instituteId,
+      assignmentId,
+      userId,
+      file.name
+    );
 
     // Upload file (RLS will enforce access control)
     const uploadResult = await uploadContentFile(
