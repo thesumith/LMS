@@ -34,7 +34,7 @@ export async function sendOnboardingEmail(
   const emailBody = `
 Welcome to ${instituteName}!
 
-Your institute has been set up on our Learning Management System platform.
+Your institute has been set up on Krrch LMS.
 
 Login Details:
 - Email: ${email}
@@ -73,7 +73,7 @@ The Platform Team
       },
       body: JSON.stringify({
         to: email,
-        subject: `Welcome to ${instituteName} - Your LMS Access`,
+        subject: `Welcome to ${instituteName} - Your Krrch LMS Access`,
         html: emailBody.replace(/\n/g, '<br>'),
         text: emailBody,
       }),
@@ -92,7 +92,7 @@ The Platform Team
   if (process.env.NODE_ENV === 'development') {
     console.log('=== ONBOARDING EMAIL (DEV MODE) ===');
     console.log(`To: ${email}`);
-    console.log(`Subject: Welcome to ${instituteName} - Your LMS Access`);
+    console.log(`Subject: Welcome to ${instituteName} - Your Krrch LMS Access`);
     console.log(`Body:\n${emailBody}`);
     console.log('===================================');
   }

@@ -1,7 +1,7 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'LMS Platform',
+  title: 'Krrch LMS',
   description: 'Multi-tenant Learning Management System',
 }
 

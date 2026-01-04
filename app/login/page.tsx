@@ -73,7 +73,7 @@ export default function LoginPage() {
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Enter your credentials to access the LMS platform
+            Enter your credentials to access Krrch LMS
           </p>
         </div>
         

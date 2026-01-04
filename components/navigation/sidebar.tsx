@@ -107,7 +107,7 @@ export function Sidebar({ items }: SidebarProps) {
           {!isCollapsed && (
             <div className="overflow-hidden">
               <h2 className="text-lg font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-                LMS Platform
+                Krrch LMS
               </h2>
               <p className="text-xs text-slate-400">Learning Management</p>
             </div>
@@ -172,7 +172,7 @@ export function Sidebar({ items }: SidebarProps) {
       {!isCollapsed && (
         <div className="p-4 border-t border-slate-700">
           <div className="text-xs text-slate-400 text-center">
-            <p>© 2024 LMS Platform</p>
+            <p>© 2024 Krrch LMS</p>
             <p className="mt-1">Multi-Tenant SaaS</p>
           </div>
         </div>

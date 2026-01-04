@@ -1,4 +1,4 @@
-# Multi-Tenant LMS SaaS Platform
+# Krrch LMS
 
 A production-grade Learning Management System built as a multi-tenant SaaS platform.
 
