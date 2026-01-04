@@ -1,7 +1,7 @@
 /**
  * Sidebar Navigation Component
  * 
- * Client component for sidebar navigation menu with modern design.
+ * Client component for sidebar navigation menu with Google Material Design styling.
  */
 
 'use client';
@@ -93,30 +93,34 @@ export function Sidebar({ items }: SidebarProps) {
   const { isCollapsed } = useSidebar();
 
   return (
-    <aside className={`bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen flex flex-col shadow-2xl border-r border-slate-700 transition-all duration-300 ${
-      isCollapsed ? 'w-20' : 'w-64'
+    <aside className={`bg-white border-r border-gray-200 min-h-screen flex flex-col transition-all duration-300 ${
+      isCollapsed ? 'w-16' : 'w-64'
     }`}>
       {/* Logo/Brand Section */}
-      <div className={`border-b border-slate-700 transition-all duration-300 ${isCollapsed ? 'p-4' : 'p-6'}`}>
+      <div
+        className={`border-b border-gray-200 h-16 flex items-center transition-all duration-300 ${
+          isCollapsed ? 'px-3' : 'px-6'
+        }`}
+      >
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
+          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
           {!isCollapsed && (
             <div className="overflow-hidden">
-              <h2 className="text-lg font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              <h2 className="text-lg font-semibold text-gray-900">
                 Krrch LMS
               </h2>
-              <p className="text-xs text-slate-400">Learning Management</p>
+              <p className="text-xs text-gray-500">Learning Management</p>
             </div>
           )}
         </div>
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
         {items.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
           return (
@@ -124,28 +128,21 @@ export function Sidebar({ items }: SidebarProps) {
               key={item.href}
               href={item.href}
               title={isCollapsed ? item.name : undefined}
-              className={`group relative flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} ${isCollapsed ? 'px-3' : 'px-4'} py-3 rounded-xl transition-all duration-200 ${
+              className={`group relative flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} ${isCollapsed ? 'px-3' : 'px-3'} py-2.5 rounded-lg transition-colors duration-150 ${
                 isActive
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/50'
-                  : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              {/* Active indicator bar */}
-              {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
-              )}
-              
               {/* Icon */}
-              <span className={`flex-shrink-0 transition-transform duration-200 ${
-                isActive ? 'scale-110' : 'group-hover:scale-110'
-              }`}>
+              <span className={`flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-600 group-hover:text-gray-900'}`}>
                 {item.icon ? getIcon(item.icon) : <DashboardIcon />}
               </span>
               
               {/* Label */}
               {!isCollapsed && (
-                <span className={`font-medium transition-all duration-200 whitespace-nowrap ${
-                  isActive ? 'font-semibold' : ''
+                <span className={`text-sm font-medium whitespace-nowrap ${
+                  isActive ? 'text-blue-600 font-semibold' : 'text-gray-700'
                 }`}>
                   {item.name}
                 </span>
@@ -153,15 +150,10 @@ export function Sidebar({ items }: SidebarProps) {
               
               {/* Tooltip for collapsed state */}
               {isCollapsed && (
-                <div className="absolute left-full ml-2 px-3 py-2 bg-slate-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                <div className="absolute left-full ml-2 px-2 py-1.5 bg-gray-900 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                   {item.name}
-                  <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-800"></div>
+                  <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
                 </div>
-              )}
-              
-              {/* Hover effect */}
-              {!isActive && (
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-600/0 to-indigo-600/0 group-hover:from-blue-600/10 group-hover:to-indigo-600/10 transition-all duration-200" />
               )}
             </Link>
           );
@@ -170,8 +162,8 @@ export function Sidebar({ items }: SidebarProps) {
 
       {/* Footer */}
       {!isCollapsed && (
-        <div className="p-4 border-t border-slate-700">
-          <div className="text-xs text-slate-400 text-center">
+        <div className="px-6 py-4 border-t border-gray-200">
+          <div className="text-xs text-gray-500 text-center">
             <p>© 2026 Krrch LMS</p>
             <p className="mt-1">Multi-Tenant SaaS</p>
           </div>

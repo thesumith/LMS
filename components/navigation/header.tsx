@@ -69,7 +69,7 @@ export function Header({ userEmail, userName }: HeaderProps) {
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex items-center justify-between px-6 h-16">
         {/* Left Section - Sidebar Toggle & Search */}
         <div className="flex items-center space-x-4 flex-1">
           {/* Sidebar Toggle Button */}
@@ -125,7 +125,7 @@ export function Header({ userEmail, userName }: HeaderProps) {
               className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               {/* Avatar */}
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-md">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                 {getInitials(userEmail, userName)}
               </div>
               
