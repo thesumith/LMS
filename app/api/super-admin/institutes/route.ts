@@ -77,6 +77,7 @@ interface CreateInstituteRequest {
   subdomain: string;
   adminName: string;
   adminEmail: string;
+  adminPassword?: string; // Optional: If provided, use this password; otherwise generate temporary password
 }
 
 /**
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // Step 3: Parse and validate request body
     const body: CreateInstituteRequest = await request.json();
-    const { instituteName, subdomain, adminName, adminEmail } = body;
+    const { instituteName, subdomain, adminName, adminEmail, adminPassword } = body;
 
     // Validation
     if (!instituteName?.trim()) {
@@ -119,6 +120,12 @@ export async function POST(request: NextRequest) {
     }
     if (!adminEmail?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail.trim())) {
       throw new ValidationError('Valid admin email is required');
+    }
+    // Validate password if provided (minimum 8 characters)
+    if (adminPassword !== undefined && adminPassword !== null) {
+      if (adminPassword.length < 8) {
+        throw new ValidationError('Password must be at least 8 characters long');
+      }
     }
 
     const normalizedSubdomain = subdomain.trim().toLowerCase();
@@ -145,8 +152,9 @@ export async function POST(request: NextRequest) {
       throw new ConflictError('Email already registered');
     }
 
-    // Step 6: Generate temporary password
-    const temporaryPassword = generateTemporaryPassword();
+    // Step 6: Use provided password or generate temporary password
+    const password = adminPassword?.trim() || generateTemporaryPassword();
+    const isTemporaryPassword = !adminPassword;
 
     // Step 7: Begin transaction-like operations
     // Note: Supabase doesn't support explicit transactions across auth and database
@@ -175,10 +183,10 @@ export async function POST(request: NextRequest) {
 
       createdInstituteId = institute.id;
 
-      // Step 7b: Create auth user with temporary password
+      // Step 7b: Create auth user with password
       const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: normalizedEmail,
-        password: temporaryPassword,
+        password: password,
         email_confirm: true, // Auto-confirm email (admin-created user)
         user_metadata: {
           name: adminName.trim(),
@@ -213,7 +221,7 @@ export async function POST(request: NextRequest) {
           email: normalizedEmail,
           first_name: firstName,
           last_name: lastName,
-          must_change_password: true,
+          must_change_password: isTemporaryPassword, // Only require password change if temporary password was used
           is_active: true,
         });
 
@@ -230,32 +238,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Step 7d: Get INSTITUTE_ADMIN role ID
-      const { data: role, error: roleError } = await supabaseAdmin
-        .from('roles')
-        .select('id')
-        .eq('name', 'INSTITUTE_ADMIN')
-        .is('deleted_at', null)
-        .single();
-
-      if (roleError || !role) {
-        // Rollback: Delete profile, auth user, and institute
-        await supabaseAdmin.from('profiles').delete().eq('id', createdUserId);
-        await supabaseAdmin.auth.admin.deleteUser(createdUserId);
-        await supabaseAdmin
-          .from('institutes')
-          .delete()
-          .eq('id', createdInstituteId);
-
-        throw new InternalServerError('Failed to find INSTITUTE_ADMIN role');
-      }
-
-      // Step 7e: Assign INSTITUTE_ADMIN role
+      // Step 7d: Assign INSTITUTE_ADMIN role (simplified - use role_name directly)
       const { error: roleAssignmentError } = await supabaseAdmin
         .from('user_roles')
         .insert({
           user_id: createdUserId,
-          role_id: role.id,
+          role_name: 'INSTITUTE_ADMIN',
           institute_id: createdInstituteId,
         });
 
@@ -273,18 +261,20 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Step 8: Send onboarding email (async, non-blocking)
+      // Step 8: Send onboarding email (async, non-blocking) only if temporary password was generated
       // Don't await - email failure shouldn't rollback the transaction
-      sendOnboardingEmail({
-        email: normalizedEmail,
-        instituteName: instituteName.trim(),
-        subdomain: normalizedSubdomain,
-        temporaryPassword,
-        adminName: adminName.trim(),
-      }).catch((error) => {
-        // Log email failure but don't throw
-        console.error('Failed to send onboarding email:', error);
-      });
+      if (isTemporaryPassword) {
+        sendOnboardingEmail({
+          email: normalizedEmail,
+          instituteName: instituteName.trim(),
+          subdomain: normalizedSubdomain,
+          temporaryPassword: password,
+          adminName: adminName.trim(),
+        }).catch((error) => {
+          // Log email failure but don't throw
+          console.error('Failed to send onboarding email:', error);
+        });
+      }
 
       // Step 9: Return success response
       return NextResponse.json(

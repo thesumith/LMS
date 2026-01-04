@@ -31,6 +31,8 @@ export default function InstitutesPage() {
   const [subdomain, setSubdomain] = useState('');
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [generatePassword, setGeneratePassword] = useState(true);
 
   useEffect(() => {
     fetchInstitutes();
@@ -72,6 +74,7 @@ export default function InstitutesPage() {
           subdomain,
           adminName,
           adminEmail,
+          adminPassword: generatePassword ? undefined : adminPassword, // Only send password if user provided it
         }),
       });
 
@@ -86,6 +89,8 @@ export default function InstitutesPage() {
       setSubdomain('');
       setAdminName('');
       setAdminEmail('');
+      setAdminPassword('');
+      setGeneratePassword(true);
       setShowCreateForm(false);
       fetchInstitutes();
     } catch (err) {
@@ -198,6 +203,44 @@ export default function InstitutesPage() {
                 onChange={(e) => setAdminEmail(e.target.value)}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
+            </div>
+            <div>
+              <div className="flex items-center mb-2">
+                <input
+                  type="checkbox"
+                  id="generatePassword"
+                  checked={generatePassword}
+                  onChange={(e) => {
+                    setGeneratePassword(e.target.checked);
+                    if (e.target.checked) {
+                      setAdminPassword('');
+                    }
+                  }}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label htmlFor="generatePassword" className="ml-2 block text-sm text-gray-700">
+                  Generate temporary password (sent via email)
+                </label>
+              </div>
+              {!generatePassword && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Admin Password
+                  </label>
+                  <input
+                    type="password"
+                    required={!generatePassword}
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    placeholder="Minimum 8 characters"
+                    minLength={8}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Password must be at least 8 characters long
+                  </p>
+                </div>
+              )}
             </div>
             <button
               type="submit"
