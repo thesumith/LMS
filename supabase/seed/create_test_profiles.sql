@@ -17,14 +17,21 @@ DECLARE
     v_teacher_role_id UUID;
     v_student_role_id UUID;
 BEGIN
-    -- Get institute ID
+    -- Get or create institute ID
     SELECT id INTO v_institute_id
     FROM institutes
     WHERE subdomain = 'test'
     LIMIT 1;
     
     IF v_institute_id IS NULL THEN
-        RAISE EXCEPTION 'Test institute not found. Run create_test_users.sql first.';
+        -- Create test institute if it doesn't exist
+        INSERT INTO institutes (id, name, subdomain, status)
+        VALUES (gen_random_uuid(), 'Test Institute', 'test', 'active')
+        RETURNING id INTO v_institute_id;
+        
+        RAISE NOTICE '✅ Created test institute: %', v_institute_id;
+    ELSE
+        RAISE NOTICE '✅ Using existing test institute: %', v_institute_id;
     END IF;
     
     -- Get role IDs
@@ -70,9 +77,9 @@ BEGIN
         
         -- Assign role
         IF v_super_admin_role_id IS NOT NULL THEN
-            INSERT INTO user_roles (user_id, role_id)
-            VALUES (v_super_admin_id, v_super_admin_role_id)
-            ON CONFLICT (user_id, role_id) DO NOTHING;
+            INSERT INTO user_roles (user_id, role_id, institute_id, deleted_at)
+            VALUES (v_super_admin_id, v_super_admin_role_id, NULL, NULL)
+            ON CONFLICT (user_id, role_id, institute_id, deleted_at) DO NOTHING;
         END IF;
         
         RAISE NOTICE '✅ Created SUPER_ADMIN profile and assigned role';
@@ -91,9 +98,9 @@ BEGIN
         
         -- Assign role
         IF v_admin_role_id IS NOT NULL THEN
-            INSERT INTO user_roles (user_id, role_id)
-            VALUES (v_admin_id, v_admin_role_id)
-            ON CONFLICT (user_id, role_id) DO NOTHING;
+            INSERT INTO user_roles (user_id, role_id, institute_id, deleted_at)
+            VALUES (v_admin_id, v_admin_role_id, v_institute_id, NULL)
+            ON CONFLICT (user_id, role_id, institute_id, deleted_at) DO NOTHING;
         END IF;
         
         RAISE NOTICE '✅ Created INSTITUTE_ADMIN profile and assigned role';
@@ -112,9 +119,9 @@ BEGIN
         
         -- Assign role
         IF v_teacher_role_id IS NOT NULL THEN
-            INSERT INTO user_roles (user_id, role_id)
-            VALUES (v_teacher_id, v_teacher_role_id)
-            ON CONFLICT (user_id, role_id) DO NOTHING;
+            INSERT INTO user_roles (user_id, role_id, institute_id, deleted_at)
+            VALUES (v_teacher_id, v_teacher_role_id, v_institute_id, NULL)
+            ON CONFLICT (user_id, role_id, institute_id, deleted_at) DO NOTHING;
         END IF;
         
         RAISE NOTICE '✅ Created TEACHER profile and assigned role';
@@ -133,9 +140,9 @@ BEGIN
         
         -- Assign role
         IF v_student_role_id IS NOT NULL THEN
-            INSERT INTO user_roles (user_id, role_id)
-            VALUES (v_student_id, v_student_role_id)
-            ON CONFLICT (user_id, role_id) DO NOTHING;
+            INSERT INTO user_roles (user_id, role_id, institute_id, deleted_at)
+            VALUES (v_student_id, v_student_role_id, v_institute_id, NULL)
+            ON CONFLICT (user_id, role_id, institute_id, deleted_at) DO NOTHING;
         END IF;
         
         RAISE NOTICE '✅ Created STUDENT profile and assigned role';
