@@ -7,6 +7,7 @@
 import { headers } from 'next/headers';
 import { Header } from '@/components/navigation/header';
 import { Sidebar } from '@/components/navigation/sidebar';
+import { SidebarProvider } from '@/components/navigation/sidebar-context';
 import { ReactNode } from 'react';
 
 interface DashboardLayoutProps {
@@ -26,15 +27,17 @@ export async function DashboardLayout({ children, navItems }: DashboardLayoutPro
   }));
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar items={sidebarItems} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header userEmail={userEmail || undefined} />
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+    <SidebarProvider>
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar items={sidebarItems} />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header userEmail={userEmail || undefined} />
+          <main className="flex-1 overflow-y-auto">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
 
