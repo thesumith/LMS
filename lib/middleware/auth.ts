@@ -100,12 +100,10 @@ export async function validateSession(
       return null;
     }
     
-    // Get user roles
+    // Get user roles (simplified - role_name is stored directly)
     const { data: roles, error: rolesError } = await supabaseAdmin
       .from('user_roles')
-      .select(`
-        roles!inner(name)
-      `)
+      .select('role_name')
       .eq('user_id', user.id)
       .is('deleted_at', null);
     
@@ -113,7 +111,7 @@ export async function validateSession(
       return null;
     }
     
-    const roleNames = roles?.map((r: any) => r.roles.name) || [];
+    const roleNames = roles?.map((r: any) => r.role_name) || [];
     
     const session: UserSession = {
       userId: user.id,

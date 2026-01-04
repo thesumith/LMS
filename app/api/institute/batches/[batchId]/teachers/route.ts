@@ -83,14 +83,12 @@ export async function POST(
         email,
         first_name,
         last_name,
-        user_roles!inner(
-          roles!inner(name)
-        )
+        user_roles!inner(role_name)
       `)
       .eq('institute_id', instituteId)
       .in('id', uniqueTeacherIds)
       .is('deleted_at', null)
-      .eq('user_roles.roles.name', 'TEACHER')
+      .eq('user_roles.role_name', 'TEACHER')
       .eq('user_roles.deleted_at', null);
 
     if (teachersError) {

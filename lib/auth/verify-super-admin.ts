@@ -9,12 +9,9 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 export async function verifySuperAdmin(userId: string): Promise<boolean> {
   const { data, error } = await supabaseAdmin
     .from('user_roles')
-    .select(`
-      role_id,
-      roles!inner(name)
-    `)
+    .select('role_name')
     .eq('user_id', userId)
-    .eq('roles.name', 'SUPER_ADMIN')
+    .eq('role_name', 'SUPER_ADMIN')
     .is('deleted_at', null)
     .single();
 

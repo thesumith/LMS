@@ -81,14 +81,12 @@ export async function POST(request: NextRequest) {
         email,
         first_name,
         last_name,
-        user_roles!inner(
-          roles!inner(name)
-        )
+        user_roles!inner(role_name)
       `)
       .eq('id', studentId)
       .eq('institute_id', instituteId)
       .is('deleted_at', null)
-      .eq('user_roles.roles.name', 'STUDENT')
+      .eq('user_roles.role_name', 'STUDENT')
       .eq('user_roles.deleted_at', null)
       .single();
 

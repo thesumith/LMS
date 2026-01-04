@@ -55,12 +55,10 @@ export async function getSuperAdminDashboard(): Promise<SuperAdminDashboard> {
     throw new Error(`Failed to fetch active institutes: ${activeError.message}`);
   }
 
-  // Get total users by role
+  // Get total users by role (simplified - role_name is stored directly)
   const { data: roleCounts, error: rolesError } = await supabaseAdmin
     .from('user_roles')
-    .select(`
-      roles!inner(name)
-    `)
+    .select('role_name')
     .is('deleted_at', null);
 
   if (rolesError) {
@@ -68,7 +66,7 @@ export async function getSuperAdminDashboard(): Promise<SuperAdminDashboard> {
   }
 
   const roleMap = roleCounts?.reduce((acc: Record<string, number>, item: any) => {
-    const roleName = item.roles?.name;
+    const roleName = item.role_name;
     if (roleName) {
       acc[roleName] = (acc[roleName] || 0) + 1;
     }
