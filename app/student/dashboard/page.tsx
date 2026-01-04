@@ -60,7 +60,7 @@ export default async function StudentDashboardPage() {
         />
         <StatCard
           title="Attendance (30 days)"
-          value={`${dashboard.attendanceSummary.attendance_percentage.toFixed(1)}%`}
+          value={`${(dashboard.attendanceSummary.attendance_percentage || 0).toFixed(1)}%`}
           icon="✅"
         />
       </div>
