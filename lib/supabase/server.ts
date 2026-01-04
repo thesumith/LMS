@@ -7,9 +7,11 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/database.types';
+import { getAuthCookieDomain } from '@/lib/supabase/cookie-domain';
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
+  const cookieDomain = getAuthCookieDomain();
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,7 +24,10 @@ export async function createSupabaseServerClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              cookieStore.set(name, value, {
+                ...options,
+                ...(cookieDomain ? { domain: cookieDomain } : {}),
+              });
             });
           } catch (error) {
             // Cookie setting can fail in middleware, ignore

@@ -14,7 +14,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { extractSubdomain, isReservedSubdomain } from '@/lib/middleware/subdomain';
-import { getInstituteBySubdomain } from '@/lib/middleware/institute';
+import { getInstituteBySubdomain, getInstituteSubdomainById } from '@/lib/middleware/institute';
 import { validateSession, isSuperAdmin, belongsToInstitute } from '@/lib/middleware/auth';
 import { extractAccessToken } from '@/lib/middleware/token';
 import {
@@ -67,6 +67,24 @@ export async function middleware(request: NextRequest) {
     // Check password change requirement
     if (session && session.mustChangePassword && pathname !== '/change-password') {
       return NextResponse.redirect(new URL('/change-password', request.url));
+    }
+
+    // If an institute-scoped user hits institute routes on the main domain,
+    // redirect them to their tenant subdomain automatically.
+    // This avoids the "Access Denied: institute context required" dead-end.
+    const isInstituteScopedRoute =
+      pathname.startsWith('/admin') ||
+      pathname.startsWith('/teacher') ||
+      pathname.startsWith('/student');
+
+    if (session && !isSuperAdmin(session) && isInstituteScopedRoute && session.instituteId) {
+      const tenantSubdomain = await getInstituteSubdomainById(session.instituteId);
+      if (tenantSubdomain) {
+        const currentUrl = new URL(request.url);
+        const port = currentUrl.port ? `:${currentUrl.port}` : '';
+        const target = `${currentUrl.protocol}//${tenantSubdomain}.${currentUrl.hostname}${port}${pathname}${currentUrl.search}`;
+        return NextResponse.redirect(new URL(target));
+      }
     }
     
     // Inject user context headers for main domain routes (e.g., super-admin)

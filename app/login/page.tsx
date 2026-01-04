@@ -56,16 +56,49 @@ export default function LoginPage() {
 
       // Session cookies are set in the API response headers
       // Redirect immediately - cookies will be available on the next request
-      const redirectUrl = redirect || data.redirect_url || '/';
+      let redirectUrl = redirect || data.redirect_url || '/';
       
-      // Ensure redirect URL is a relative path starting with /
-      const finalRedirectUrl = redirectUrl.startsWith('/') 
-        ? redirectUrl 
-        : `/${redirectUrl}`;
+      // If subdomain is provided, construct full URL with subdomain
+      // This is needed when user logs in on main domain but needs to land on tenant subdomain.
+      if (data.redirect_subdomain) {
+        const protocol = window.location.protocol;
+        const currentHost = window.location.host; // may already include a subdomain
+        const currentHostname = window.location.hostname;
+        const port = window.location.port ? `:${window.location.port}` : '';
+        const subdomain = String(data.redirect_subdomain);
+
+        // If we're already on the correct tenant subdomain, don't prepend again.
+        if (!currentHostname.startsWith(`${subdomain}.`)) {
+          // Use NEXT_PUBLIC_MAIN_DOMAIN (recommended) to avoid double-subdomain like a.a.localhost
+          const mainDomainEnv = (process.env.NEXT_PUBLIC_MAIN_DOMAIN || '').trim();
+          const mainDomain = mainDomainEnv ? mainDomainEnv.split(':')[0] : '';
+
+          let baseHost: string;
+          if (mainDomain && (currentHostname === mainDomain || currentHostname.endsWith(`.${mainDomain}`))) {
+            baseHost = `${mainDomain}${port}`;
+          } else {
+            // Fallback: strip the left-most label from hostname (tenant) and keep the rest.
+            // e.g. askpoint.localhost -> localhost, school.platform.com -> platform.com
+            const parts = currentHostname.split('.');
+            const baseHostname = parts.length > 1 ? parts.slice(1).join('.') : currentHostname;
+            baseHost = `${baseHostname}${port}`;
+          }
+
+          redirectUrl = `${protocol}//${subdomain}.${baseHost}${redirectUrl}`;
+        } else {
+          // Ensure redirect URL is a relative path starting with /
+          redirectUrl = redirectUrl.startsWith('/') ? redirectUrl : `/${redirectUrl}`;
+        }
+      } else {
+        // Ensure redirect URL is a relative path starting with /
+        redirectUrl = redirectUrl.startsWith('/') 
+          ? redirectUrl 
+          : `/${redirectUrl}`;
+      }
       
       // Use window.location.href for full page reload to ensure cookies are sent
       // This is necessary because cookies are set in the API response
-      window.location.href = finalRedirectUrl;
+      window.location.href = redirectUrl;
     } catch (err) {
       console.error('Login error:', err);
       setError('An unexpected error occurred. Please try again.');
@@ -94,37 +127,37 @@ export default function LoginPage() {
           <div className="mb-6">
             <h2 className="text-2xl font-semibold text-gray-900 mb-1">
               Sign in
-            </h2>
+          </h2>
             <p className="text-gray-600 text-sm">
               Enter your credentials to access your account
-            </p>
-          </div>
-
+          </p>
+        </div>
+        
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* Error Message */}
-            {error && (
+          {error && (
               <div className="rounded-md bg-red-50 border border-red-200 p-4">
                 <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="h-5 w-5 text-red-400"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
                     <p className="text-sm font-medium text-red-800">{error}</p>
-                  </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
             {/* Email Field */}
             <div>
@@ -149,20 +182,20 @@ export default function LoginPage() {
                     />
                   </svg>
                 </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
                   className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm"
                   placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
-                  disabled={loading}
-                />
+                disabled={loading}
+              />
               </div>
             </div>
 
@@ -189,20 +222,20 @@ export default function LoginPage() {
                     />
                   </svg>
                 </div>
-                <input
-                  id="password"
-                  name="password"
+              <input
+                id="password"
+                name="password"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
+                autoComplete="current-password"
+                required
                   className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm"
                   placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setFocusedField('password')}
                   onBlur={() => setFocusedField(null)}
-                  disabled={loading}
-                />
+                disabled={loading}
+              />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
@@ -246,7 +279,7 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
-            </div>
+          </div>
 
             {/* Submit Button */}
             <button
@@ -290,9 +323,9 @@ export default function LoginPage() {
                 <span className="text-blue-600 font-medium">
                   Contact your administrator
                 </span>
-              </p>
-            </div>
-          </form>
+            </p>
+          </div>
+        </form>
         </div>
       </div>
     </div>

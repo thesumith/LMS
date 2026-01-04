@@ -20,7 +20,7 @@ export default async function AdminDashboardPage() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h1 className="text-2xl font-semibold mb-4 text-red-900">Access Denied</h1>
             <div className="space-y-3 text-gray-700">
-              <p>Institute context or authentication required.</p>
+        <p>Institute context or authentication required.</p>
               <div className="mt-4 p-4 bg-white rounded border border-gray-200">
                 <p className="text-sm font-medium text-gray-900 mb-2">Possible reasons:</p>
                 <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">

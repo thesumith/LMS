@@ -144,11 +144,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 5: Check if email already exists in auth.users
-    const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(
-      normalizedEmail
+    const { data: existingUsersData, error: listUsersError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (listUsersError) {
+      throw new InternalServerError(
+        `Failed to check existing users: ${listUsersError.message}`
+      );
+    }
+
+    const existingUser = existingUsersData?.users.find(
+      (u) => u.email?.toLowerCase() === normalizedEmail
     );
 
-    if (existingUser?.user) {
+    if (existingUser) {
       throw new ConflictError('Email already registered');
     }
 
@@ -264,16 +272,16 @@ export async function POST(request: NextRequest) {
       // Step 8: Send onboarding email (async, non-blocking) only if temporary password was generated
       // Don't await - email failure shouldn't rollback the transaction
       if (isTemporaryPassword) {
-        sendOnboardingEmail({
-          email: normalizedEmail,
-          instituteName: instituteName.trim(),
-          subdomain: normalizedSubdomain,
+      sendOnboardingEmail({
+        email: normalizedEmail,
+        instituteName: instituteName.trim(),
+        subdomain: normalizedSubdomain,
           temporaryPassword: password,
-          adminName: adminName.trim(),
-        }).catch((error) => {
-          // Log email failure but don't throw
-          console.error('Failed to send onboarding email:', error);
-        });
+        adminName: adminName.trim(),
+      }).catch((error) => {
+        // Log email failure but don't throw
+        console.error('Failed to send onboarding email:', error);
+      });
       }
 
       // Step 9: Return success response

@@ -17,6 +17,7 @@ interface InstituteCache {
 // In-memory cache for institute lookups
 // In production, consider using Redis or similar for distributed systems
 const instituteCache = new Map<string, InstituteCache>();
+const instituteIdToSubdomainCache = new Map<string, { subdomain: string; status: 'active' | 'suspended'; cachedAt: number }>();
 
 // Cache TTL: 5 minutes
 const CACHE_TTL = 5 * 60 * 1000;
@@ -46,7 +47,9 @@ export async function getInstituteBySubdomain(
   }
   
   // Query database
-  const { data, error } = await supabaseAdmin
+  // NOTE: Database types may not include all tables in this repo yet.
+  // Cast to `any` to avoid `never` type issues in middleware utilities.
+  const { data, error } = await (supabaseAdmin as any)
     .from('institutes')
     .select('id, status')
     .eq('subdomain', subdomain.toLowerCase())
@@ -67,18 +70,60 @@ export async function getInstituteBySubdomain(
   
   // Cache the result
   instituteCache.set(subdomain, {
-    id: data.id,
+    id: (data as any).id,
     subdomain,
-    status: data.status as 'active' | 'suspended',
+    status: (data as any).status as 'active' | 'suspended',
     cachedAt: Date.now(),
   });
   
   // Only return if active
-  if (data.status === 'active') {
-    return { id: data.id, status: data.status };
+  if ((data as any).status === 'active') {
+    return { id: (data as any).id, status: (data as any).status };
   }
   
   return null;
+}
+
+/**
+ * Get institute subdomain by institute id with caching
+ *
+ * Returns null if institute doesn't exist or is suspended.
+ */
+export async function getInstituteSubdomainById(
+  instituteId: string
+): Promise<string | null> {
+  const cached = instituteIdToSubdomainCache.get(instituteId);
+  if (cached) {
+    const age = Date.now() - cached.cachedAt;
+    if (age < CACHE_TTL) {
+      return cached.status === 'active' ? cached.subdomain : null;
+    }
+    instituteIdToSubdomainCache.delete(instituteId);
+  }
+
+  const { data, error } = await (supabaseAdmin as any)
+    .from('institutes')
+    .select('subdomain, status')
+    .eq('id', instituteId)
+    .is('deleted_at', null)
+    .single();
+
+  if (error || !data) {
+    instituteIdToSubdomainCache.set(instituteId, {
+      subdomain: '',
+      status: 'suspended',
+      cachedAt: Date.now(),
+    });
+    return null;
+  }
+
+  instituteIdToSubdomainCache.set(instituteId, {
+    subdomain: (data as any).subdomain,
+    status: (data as any).status as 'active' | 'suspended',
+    cachedAt: Date.now(),
+  });
+
+  return (data as any).status === 'active' ? (data as any).subdomain : null;
 }
 
 /**
@@ -90,5 +135,6 @@ export function clearInstituteCache(subdomain?: string): void {
   } else {
     instituteCache.clear();
   }
+  instituteIdToSubdomainCache.clear();
 }
 

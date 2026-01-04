@@ -10,6 +10,7 @@ import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getDashboardUrl } from '@/lib/auth/get-dashboard-url';
 import { cookies } from 'next/headers';
+import { getAuthCookieDomain } from '@/lib/supabase/cookie-domain';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Create Supabase server client with cookie handling
     const cookieStore = await cookies();
+    const cookieDomain = getAuthCookieDomain();
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
@@ -52,7 +54,10 @@ export async function POST(request: NextRequest) {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              cookieStore.set(name, value, {
+                ...options,
+                ...(cookieDomain ? { domain: cookieDomain } : {}),
+              });
             });
           } catch (error) {
             // Cookie setting can fail in some contexts, but we'll continue
@@ -135,15 +140,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine redirect URL
+    // Determine redirect URL and subdomain
     // If user must change password, redirect to change-password page
     // Otherwise, redirect to their role-appropriate dashboard
     let redirectUrl = '/';
+    let redirectSubdomain: string | null = null;
     
     if (profile.must_change_password) {
       redirectUrl = '/change-password';
     } else {
-      redirectUrl = getDashboardUrl(roleNames);
+      const dashboardPath = getDashboardUrl(roleNames);
+      
+      // For SUPER_ADMIN, dashboard is on main domain (path only)
+      // For other roles, dashboard requires institute subdomain
+      if (!roleNames.includes('SUPER_ADMIN') && profile.institute_id) {
+        // Get institute subdomain
+        const { data: institute, error: instituteError } = await supabaseAdmin
+          .from('institutes')
+          .select('subdomain')
+          .eq('id', profile.institute_id)
+          .is('deleted_at', null)
+          .single();
+        
+        if (instituteError || !institute) {
+          return NextResponse.json(
+            { error: 'Institute not found' },
+            { status: 404 }
+          );
+        }
+        
+        // Store subdomain - frontend will construct full URL
+        redirectSubdomain = institute.subdomain;
+        redirectUrl = dashboardPath; // Return path only
+      } else {
+        // SUPER_ADMIN or no institute - use path only (will use current domain)
+        redirectUrl = dashboardPath;
+      }
     }
 
     // Create response with session data
@@ -157,6 +189,7 @@ export async function POST(request: NextRequest) {
         must_change_password: profile.must_change_password,
       },
       redirect_url: redirectUrl,
+      redirect_subdomain: redirectSubdomain, // Include subdomain if needed
     });
 
     // Get all cookies that were set by setSession() and copy them to the response
@@ -172,6 +205,7 @@ export async function POST(request: NextRequest) {
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax' as const,
           path: '/',
+          ...(cookieDomain ? { domain: cookieDomain } : {}),
           ...(isAuthCookie ? { maxAge: 60 * 60 * 24 * 7 } : {}),
         }
       );

@@ -33,6 +33,20 @@ LMS/
 4. Set up RLS policies
 5. Start development server
 
+## Local Development (Subdomains + Auth)
+
+To make authentication work across tenant subdomains, auth cookies must be shared across subdomains via a cookie `Domain` (e.g. `.platform.com`).
+
+- **Production**: set `NEXT_PUBLIC_MAIN_DOMAIN=platform.com` (your real domain)
+- **Local dev**: browsers do **not** reliably support `Domain=.localhost`
+  - Use a dev domain that supports subdomains, like `lvh.me` (resolves to `127.0.0.1`)
+  - Set:
+    - `NEXT_PUBLIC_MAIN_DOMAIN=lvh.me`
+    - `NEXT_PUBLIC_APP_URL=http://lvh.me:3000`
+  - Then access:
+    - Main: `http://lvh.me:3000`
+    - Tenant: `http://your-institute.lvh.me:3000`
+
 ## Important Notes
 
 - Public signup is disabled
