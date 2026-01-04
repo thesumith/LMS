@@ -30,6 +30,48 @@ import {
   InternalServerError,
 } from '@/lib/errors/api-errors';
 
+/**
+ * GET /api/super-admin/institutes
+ * 
+ * Fetches all institutes (for super admin)
+ */
+export async function GET(request: NextRequest) {
+  try {
+    // Step 1: Verify authentication
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
+    // Step 2: Verify SUPER_ADMIN authorization
+    const isSuperAdmin = await verifySuperAdmin(userId);
+    if (!isSuperAdmin) {
+      throw new ForbiddenError('Only SUPER_ADMIN can view institutes');
+    }
+
+    // Step 3: Fetch all institutes
+    const { data: institutes, error: institutesError } = await supabaseAdmin
+      .from('institutes')
+      .select('id, name, subdomain, status, created_at')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
+
+    if (institutesError) {
+      throw new InternalServerError(
+        `Failed to fetch institutes: ${institutesError.message}`
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: institutes || [],
+    });
+  } catch (error) {
+    const { statusCode, body } = formatErrorResponse(error);
+    return NextResponse.json(body, { status: statusCode });
+  }
+}
+
 interface CreateInstituteRequest {
   instituteName: string;
   subdomain: string;

@@ -8,8 +8,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { createSupabaseClient } from '@/lib/supabase/client';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,25 +46,18 @@ export default function LoginPage() {
         return;
       }
 
-      // Store session in Supabase client-side
-      const supabase = createSupabaseClient();
-
-      // Set session (this will automatically handle cookies)
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-      });
-
-      if (sessionError) {
-        setError('Failed to establish session');
-        setLoading(false);
-        return;
-      }
-
-      // Redirect to appropriate dashboard or requested URL
+      // Session cookies are set in the API response headers
+      // Redirect immediately - cookies will be available on the next request
       const redirectUrl = redirect || data.redirect_url || '/';
-      router.push(redirectUrl);
-      router.refresh(); // Refresh to update middleware context
+      
+      // Ensure redirect URL is a relative path starting with /
+      const finalRedirectUrl = redirectUrl.startsWith('/') 
+        ? redirectUrl 
+        : `/${redirectUrl}`;
+      
+      // Use window.location.href for full page reload to ensure cookies are sent
+      // This is necessary because cookies are set in the API response
+      window.location.href = finalRedirectUrl;
     } catch (err) {
       console.error('Login error:', err);
       setError('An unexpected error occurred. Please try again.');

@@ -6,9 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getDashboardUrl } from '@/lib/auth/get-dashboard-url';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,11 +42,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Supabase client for authentication
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: false,
+    // Create Supabase server client with cookie handling
+    const cookieStore = await cookies();
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch (error) {
+            // Cookie setting can fail in some contexts, but we'll continue
+          }
+        },
       },
     });
 
@@ -111,6 +123,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Set the session using the server client (this will set cookies properly)
+    const { error: setSessionError } = await supabase.auth.setSession({
+      access_token: authData.session.access_token,
+      refresh_token: authData.session.refresh_token,
+    });
+
+    if (setSessionError) {
+      console.error('Error setting session:', setSessionError);
+      return NextResponse.json(
+        { error: 'Failed to establish session' },
+        { status: 500 }
+      );
+    }
+
     // Determine redirect URL
     // If user must change password, redirect to change-password page
     // Otherwise, redirect to their role-appropriate dashboard
@@ -122,15 +148,9 @@ export async function POST(request: NextRequest) {
       redirectUrl = getDashboardUrl(roleNames);
     }
 
-    // Return session data
-    return NextResponse.json({
+    // Create response with session data
+    const response = NextResponse.json({
       success: true,
-      session: {
-        access_token: authData.session.access_token,
-        refresh_token: authData.session.refresh_token,
-        expires_at: authData.session.expires_at,
-        expires_in: authData.session.expires_in,
-      },
       user: {
         id: authData.user.id,
         email: profile.email,
@@ -140,6 +160,26 @@ export async function POST(request: NextRequest) {
       },
       redirect_url: redirectUrl,
     });
+
+    // Get all cookies that were set by setSession() and copy them to the response
+    // This ensures session cookies are included in the response
+    const allCookies = cookieStore.getAll();
+    allCookies.forEach((cookie) => {
+      const isAuthCookie = cookie.name.includes('auth-token');
+      response.cookies.set(
+        cookie.name,
+        cookie.value,
+        {
+          httpOnly: isAuthCookie,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax' as const,
+          path: '/',
+          ...(isAuthCookie ? { maxAge: 60 * 60 * 24 * 7 } : {}),
+        }
+      );
+    });
+    
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     

@@ -41,14 +41,37 @@ export function extractAccessToken(request: NextRequest): string | null {
     
     if (cookie) {
       try {
+        let cookieValue = cookie.value;
+        
+        // Handle base64 encoded cookie values (Supabase SSR format)
+        if (cookieValue.startsWith('base64-')) {
+          // Remove 'base64-' prefix and decode
+          const base64Data = cookieValue.substring(7); // Remove 'base64-' prefix
+          cookieValue = Buffer.from(base64Data, 'base64').toString('utf-8');
+        }
+        
         // Cookie value is JSON string containing access_token
-        const tokenData = JSON.parse(cookie.value);
+        const tokenData = JSON.parse(cookieValue);
         if (tokenData.access_token) {
           return tokenData.access_token;
         }
-      } catch {
-        // Cookie might be just the token
-        return cookie.value;
+      } catch (error) {
+        // If parsing fails, try using the raw value (might be just the token)
+        // But first check if it's base64 encoded
+        let cookieValue = cookie.value;
+        if (cookieValue.startsWith('base64-')) {
+          try {
+            const base64Data = cookieValue.substring(7);
+            cookieValue = Buffer.from(base64Data, 'base64').toString('utf-8');
+            const tokenData = JSON.parse(cookieValue);
+            if (tokenData.access_token) {
+              return tokenData.access_token;
+            }
+          } catch {
+            // Fall through to return raw value
+          }
+        }
+        return cookieValue;
       }
     }
   }
@@ -64,12 +87,23 @@ export function extractAccessToken(request: NextRequest): string | null {
     const cookie = request.cookies.get(cookieName);
     if (cookie) {
       try {
-        const tokenData = JSON.parse(cookie.value);
+        let cookieValue = cookie.value;
+        
+        // Handle base64 encoded cookie values
+        if (cookieValue.startsWith('base64-')) {
+          const base64Data = cookieValue.substring(7);
+          cookieValue = Buffer.from(base64Data, 'base64').toString('utf-8');
+        }
+        
+        const tokenData = JSON.parse(cookieValue);
         if (tokenData.access_token) {
           return tokenData.access_token;
         }
       } catch {
-        return cookie.value;
+        // If parsing fails, return raw value
+        return cookie.value.startsWith('base64-') 
+          ? Buffer.from(cookie.value.substring(7), 'base64').toString('utf-8')
+          : cookie.value;
       }
     }
   }

@@ -69,8 +69,20 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/change-password', request.url));
     }
     
+    // Inject user context headers for main domain routes (e.g., super-admin)
+    const requestHeaders = new Headers(request.headers);
+    if (session) {
+      requestHeaders.set('x-user-id', session.userId);
+      requestHeaders.set('x-user-email', session.email);
+      requestHeaders.set('x-user-roles', session.roles.join(','));
+    }
+    
     // Allow access - no institute context needed for main domain
-    return NextResponse.next();
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
   
   // Step 3: Handle subdomain (tenant routes)
