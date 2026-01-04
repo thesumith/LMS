@@ -172,7 +172,7 @@ export function Sidebar({ items }: SidebarProps) {
       {!isCollapsed && (
         <div className="p-4 border-t border-slate-700">
           <div className="text-xs text-slate-400 text-center">
-            <p>© 2024 Krrch LMS</p>
+            <p>© 2026 Krrch LMS</p>
             <p className="mt-1">Multi-Tenant SaaS</p>
           </div>
         </div>
