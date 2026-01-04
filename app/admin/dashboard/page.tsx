@@ -7,7 +7,6 @@
 
 import { headers } from 'next/headers';
 import { getInstituteAdminDashboard } from '@/lib/data/admin-dashboard';
-import { getInstituteContext } from '@/lib/middleware/helpers';
 
 export default async function AdminDashboardPage() {
   const headersList = await headers();
@@ -40,7 +39,10 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Institute Admin Dashboard</h1>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Institute Admin Dashboard</h1>
+        <p className="mt-2 text-sm text-gray-600">Overview of your institute's activity and performance.</p>
+      </div>
 
       {/* Statistics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
