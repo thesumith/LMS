@@ -81,12 +81,12 @@ BEGIN
         FROM (
             SELECT 
                 ar.student_id,
-                COUNT(DISTINCT as.id) FILTER (WHERE ar.status IN ('present', 'late', 'excused')) AS present_sessions,
-                COUNT(DISTINCT as.id) AS total_sessions
-            FROM attendance_sessions as
-            INNER JOIN attendance_records ar ON as.id = ar.session_id
-            WHERE as.institute_id = p_institute_id
-                AND as.deleted_at IS NULL
+                COUNT(DISTINCT att_sess.id) FILTER (WHERE ar.status IN ('present', 'late', 'excused')) AS present_sessions,
+                COUNT(DISTINCT att_sess.id) AS total_sessions
+            FROM attendance_sessions att_sess
+            INNER JOIN attendance_records ar ON att_sess.id = ar.session_id
+            WHERE att_sess.institute_id = p_institute_id
+                AND att_sess.deleted_at IS NULL
                 AND ar.deleted_at IS NULL
             GROUP BY ar.student_id
         ) attendance_stats) AS average_attendance_percentage,
@@ -228,21 +228,21 @@ BEGIN
         -- Upcoming attendance sessions (next 7 days)
         (SELECT COALESCE(jsonb_agg(
             jsonb_build_object(
-                'id', as.id,
-                'session_date', as.session_date,
-                'title', as.title,
+                'id', att_sess.id,
+                'session_date', att_sess.session_date,
+                'title', att_sess.title,
                 'batch_name', b.name,
                 'course_name', c.name
-            ) ORDER BY as.session_date ASC
+            ) ORDER BY att_sess.session_date ASC
         ), '[]'::jsonb)
-        FROM attendance_sessions as
-        INNER JOIN batches b ON as.batch_id = b.id
+        FROM attendance_sessions att_sess
+        INNER JOIN batches b ON att_sess.batch_id = b.id
         INNER JOIN courses c ON b.course_id = c.id
         INNER JOIN batch_teachers bt ON b.id = bt.batch_id
         WHERE bt.teacher_id = p_teacher_id
-            AND as.session_date >= CURRENT_DATE
-            AND as.session_date <= CURRENT_DATE + INTERVAL '7 days'
-            AND as.deleted_at IS NULL
+            AND att_sess.session_date >= CURRENT_DATE
+            AND att_sess.session_date <= CURRENT_DATE + INTERVAL '7 days'
+            AND att_sess.deleted_at IS NULL
             AND b.deleted_at IS NULL
             AND bt.deleted_at IS NULL) AS upcoming_sessions;
 END;
@@ -359,26 +359,26 @@ BEGIN
         
         -- Attendance summary (last 30 days)
         (SELECT jsonb_build_object(
-            'total_sessions', COUNT(DISTINCT as.id),
-            'present_count', COUNT(DISTINCT as.id) FILTER (WHERE ar.status = 'present'),
-            'absent_count', COUNT(DISTINCT as.id) FILTER (WHERE ar.status = 'absent'),
-            'late_count', COUNT(DISTINCT as.id) FILTER (WHERE ar.status = 'late'),
+            'total_sessions', COUNT(DISTINCT att_sess.id),
+            'present_count', COUNT(DISTINCT att_sess.id) FILTER (WHERE ar.status = 'present'),
+            'absent_count', COUNT(DISTINCT att_sess.id) FILTER (WHERE ar.status = 'absent'),
+            'late_count', COUNT(DISTINCT att_sess.id) FILTER (WHERE ar.status = 'late'),
             'attendance_percentage', CASE 
-                WHEN COUNT(DISTINCT as.id) > 0 
-                THEN (COUNT(DISTINCT as.id) FILTER (WHERE ar.status IN ('present', 'late', 'excused'))::NUMERIC / 
-                      COUNT(DISTINCT as.id)::NUMERIC) * 100
+                WHEN COUNT(DISTINCT att_sess.id) > 0 
+                THEN (COUNT(DISTINCT att_sess.id) FILTER (WHERE ar.status IN ('present', 'late', 'excused'))::NUMERIC / 
+                      COUNT(DISTINCT att_sess.id)::NUMERIC) * 100
                 ELSE 0
             END
         )
-        FROM attendance_sessions as
-        LEFT JOIN attendance_records ar ON as.id = ar.session_id AND ar.student_id = p_student_id
-        INNER JOIN batches b ON as.batch_id = b.id
+        FROM attendance_sessions att_sess
+        LEFT JOIN attendance_records ar ON att_sess.id = ar.session_id AND ar.student_id = p_student_id
+        INNER JOIN batches b ON att_sess.batch_id = b.id
         INNER JOIN batch_students bs ON b.id = bs.batch_id
         WHERE bs.student_id = p_student_id
             AND bs.status = 'active'
-            AND as.session_date >= CURRENT_DATE - INTERVAL '30 days'
-            AND as.session_date <= CURRENT_DATE
-            AND as.deleted_at IS NULL
+            AND att_sess.session_date >= CURRENT_DATE - INTERVAL '30 days'
+            AND att_sess.session_date <= CURRENT_DATE
+            AND att_sess.deleted_at IS NULL
             AND bs.deleted_at IS NULL) AS attendance_summary;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

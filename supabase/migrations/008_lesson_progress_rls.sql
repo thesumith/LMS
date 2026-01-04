@@ -119,17 +119,10 @@ WITH CHECK (
         AND institute_id = get_user_institute_id())
     OR
     -- STUDENT can update their own progress
+    -- Note: Immutability of completed progress is enforced by trigger, not RLS
     (has_role('STUDENT') 
         AND student_id = auth.uid()
-        AND institute_id = get_user_institute_id()
-        -- Prevent updating completed_at directly (trigger will handle it)
-        AND (
-            -- Can update if not completed
-            completed_at IS NULL
-            OR
-            -- Or if completed_at is being set for the first time
-            (completed_at IS NOT NULL AND OLD.completed_at IS NULL)
-        ))
+        AND institute_id = get_user_institute_id())
 );
 
 -- DELETE: Soft delete only, Students can delete their own, Admin can delete any

@@ -12,7 +12,7 @@
 -- Can be manual (teacher-led) or automatic (lesson-based)
 -- ============================================================================
 CREATE TABLE attendance_sessions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     batch_id UUID NOT NULL REFERENCES batches(id) ON DELETE CASCADE,
     session_date DATE NOT NULL,
@@ -49,7 +49,7 @@ CREATE INDEX idx_attendance_sessions_deleted_at ON attendance_sessions(deleted_a
 -- Linked to attendance sessions
 -- ============================================================================
 CREATE TABLE attendance_records (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     session_id UUID NOT NULL REFERENCES attendance_sessions(id) ON DELETE CASCADE,
     batch_id UUID NOT NULL REFERENCES batches(id) ON DELETE CASCADE,

@@ -278,9 +278,8 @@ WITH CHECK (
             FROM attendance_sessions 
             WHERE is_locked = false -- Cannot update records in locked sessions
                 AND deleted_at IS NULL
-        )
-        -- Cannot change automatic records to manual or vice versa
-        AND OLD.is_automatic = NEW.is_automatic)
+        ))
+        -- Note: Immutability of is_automatic flag is enforced via triggers/application logic
 );
 
 -- DELETE: Soft delete only, Teachers can delete records from their batches (only if session not locked)

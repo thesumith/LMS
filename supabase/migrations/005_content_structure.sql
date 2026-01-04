@@ -12,7 +12,7 @@
 -- Modules are ordered within a course
 -- ============================================================================
 CREATE TABLE modules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE RESTRICT,
     name VARCHAR(255) NOT NULL,
@@ -43,7 +43,7 @@ CREATE INDEX idx_modules_deleted_at ON modules(deleted_at) WHERE deleted_at IS N
 -- Lessons are ordered within a module
 -- ============================================================================
 CREATE TABLE lessons (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE RESTRICT,
     module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,

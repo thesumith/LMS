@@ -12,7 +12,7 @@
 -- Configured by Institute Admin
 -- ============================================================================
 CREATE TABLE course_certificate_rules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     min_attendance_percentage INTEGER NOT NULL DEFAULT 75 CHECK (min_attendance_percentage >= 0 AND min_attendance_percentage <= 100),
@@ -40,7 +40,7 @@ CREATE INDEX idx_course_certificate_rules_deleted_at ON course_certificate_rules
 -- One certificate per student per course per batch
 -- ============================================================================
 CREATE TABLE certificates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     student_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE RESTRICT,
@@ -180,11 +180,11 @@ BEGIN
         COUNT(*) FILTER (WHERE ar.status = 'present' OR ar.status = 'late' OR ar.status = 'excused')::NUMERIC,
         COUNT(*)::NUMERIC
     INTO v_present_sessions, v_total_sessions
-    FROM attendance_sessions as
-    LEFT JOIN attendance_records ar ON as.id = ar.session_id
-    WHERE as.batch_id = p_batch_id
+    FROM attendance_sessions att_sess
+    LEFT JOIN attendance_records ar ON att_sess.id = ar.session_id
+    WHERE att_sess.batch_id = p_batch_id
         AND ar.student_id = p_student_id
-        AND as.deleted_at IS NULL
+        AND att_sess.deleted_at IS NULL
         AND ar.deleted_at IS NULL;
     
     IF v_total_sessions > 0 THEN

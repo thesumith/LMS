@@ -12,7 +12,7 @@
 -- Can be edited until first submission is received
 -- ============================================================================
 CREATE TABLE assignments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     batch_id UUID NOT NULL REFERENCES batches(id) ON DELETE CASCADE,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE RESTRICT,
@@ -49,7 +49,7 @@ CREATE INDEX idx_assignments_deleted_at ON assignments(deleted_at) WHERE deleted
 -- One submission per student per assignment
 -- ============================================================================
 CREATE TABLE assignment_submissions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     assignment_id UUID NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
     batch_id UUID NOT NULL REFERENCES batches(id) ON DELETE CASCADE,
@@ -68,14 +68,9 @@ CREATE TABLE assignment_submissions (
     deleted_at TIMESTAMPTZ NULL,
     
     -- Constraints
-    CONSTRAINT assignment_submissions_unique UNIQUE (assignment_id, student_id, deleted_at),
-    CONSTRAINT assignment_submissions_marks_check CHECK (
-        marks IS NULL OR marks <= (
-            SELECT max_marks 
-            FROM assignments 
-            WHERE id = assignment_id
-        )
-    )
+    CONSTRAINT assignment_submissions_unique UNIQUE (assignment_id, student_id, deleted_at)
+    -- Note: marks validation against max_marks is enforced via trigger/application logic
+    -- PostgreSQL doesn't allow subqueries in CHECK constraints
 );
 
 -- Indexes for assignment_submissions

@@ -12,7 +12,7 @@
 -- Created and managed by Institute Admin
 -- ============================================================================
 CREATE TABLE courses (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     name VARCHAR(255) NOT NULL,
     code VARCHAR(50) NOT NULL, -- Course code (e.g., "CS101")
@@ -40,7 +40,7 @@ CREATE INDEX idx_courses_deleted_at ON courses(deleted_at) WHERE deleted_at IS N
 -- A course can have multiple batches (e.g., Fall 2024, Spring 2025)
 -- ============================================================================
 CREATE TABLE batches (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE RESTRICT,
     name VARCHAR(255) NOT NULL, -- Batch name (e.g., "Fall 2024", "Morning Batch")
@@ -70,7 +70,7 @@ CREATE INDEX idx_batches_deleted_at ON batches(deleted_at) WHERE deleted_at IS N
 -- A batch can have multiple teachers
 -- ============================================================================
 CREATE TABLE batch_teachers (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     batch_id UUID NOT NULL REFERENCES batches(id) ON DELETE CASCADE,
     teacher_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -96,7 +96,7 @@ CREATE INDEX idx_batch_teachers_deleted_at ON batch_teachers(deleted_at) WHERE d
 -- Tracks enrollment status and dates
 -- ============================================================================
 CREATE TABLE batch_students (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     batch_id UUID NOT NULL REFERENCES batches(id) ON DELETE CASCADE,
     student_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,

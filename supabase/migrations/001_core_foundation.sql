@@ -7,8 +7,17 @@
 
 -- Enable required extensions
 -- ============================================================================
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Enable UUID extension (Supabase has this enabled by default, but ensure it's available)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 CREATE EXTENSION IF NOT EXISTS "pg_trgm"; -- For subdomain text search performance
+
+-- Ensure gen_random_uuid() function is available
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'uuid_generate_v4') THEN
+        CREATE FUNCTION gen_random_uuid() RETURNS uuid AS '$libdir/uuid-ossp', 'uuid_generate_v4' LANGUAGE C STRICT;
+    END IF;
+END $$;
 
 -- ============================================================================
 -- INSTITUTES TABLE
@@ -17,7 +26,7 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm"; -- For subdomain text search performan
 -- Subdomain is the tenant identifier used in URL routing
 -- ============================================================================
 CREATE TABLE institutes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     subdomain VARCHAR(100) NOT NULL UNIQUE,
     status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended')),
@@ -38,7 +47,7 @@ CREATE INDEX idx_institutes_deleted_at ON institutes(deleted_at) WHERE deleted_a
 -- Roles are platform-wide, not tenant-specific
 -- ============================================================================
 CREATE TABLE roles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL UNIQUE,
     description TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -83,7 +92,7 @@ CREATE INDEX idx_profiles_deleted_at ON profiles(deleted_at) WHERE deleted_at IS
 -- Users can have multiple roles (e.g., Teacher + Institute Admin)
 -- ============================================================================
 CREATE TABLE user_roles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     institute_id UUID NULL REFERENCES institutes(id) ON DELETE CASCADE,
@@ -111,7 +120,7 @@ CREATE INDEX idx_user_roles_deleted_at ON user_roles(deleted_at) WHERE deleted_a
 -- Cross-tenant table (no institute_id) - platform-wide audit trail
 -- ============================================================================
 CREATE TABLE audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NULL REFERENCES profiles(id) ON DELETE SET NULL,
     institute_id UUID NULL REFERENCES institutes(id) ON DELETE SET NULL,
     action VARCHAR(100) NOT NULL,

@@ -12,7 +12,7 @@
 -- Immutable once completed (completed_at cannot be updated)
 -- ============================================================================
 CREATE TABLE lesson_progress (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     institute_id UUID NOT NULL REFERENCES institutes(id) ON DELETE RESTRICT,
     student_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,

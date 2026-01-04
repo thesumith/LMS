@@ -276,6 +276,7 @@ WITH CHECK (
         AND institute_id = get_user_institute_id())
     OR
     -- TEACHER can update marks and feedback
+    -- Note: Immutability of storage_path, submitted_at, etc. is enforced via triggers/application logic
     (has_role('TEACHER') 
         AND institute_id = get_user_institute_id()
         AND batch_id IN (
@@ -283,13 +284,7 @@ WITH CHECK (
             FROM batch_teachers 
             WHERE teacher_id = auth.uid()
                 AND deleted_at IS NULL
-        )
-        -- Can only update marks, feedback, evaluated_at, evaluated_by
-        -- Cannot update storage_path, submitted_at, student_id, etc.
-        AND OLD.storage_path = NEW.storage_path
-        AND OLD.submitted_at = NEW.submitted_at
-        AND OLD.student_id = NEW.student_id
-        AND OLD.assignment_id = NEW.assignment_id)
+        ))
 );
 
 -- DELETE: Soft delete only, Teachers can delete submissions from their batches
