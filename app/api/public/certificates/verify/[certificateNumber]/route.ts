@@ -60,17 +60,24 @@ export async function GET(
       .eq('id', certificate.institute_id)
       .single();
 
+    const course: any = Array.isArray((certificate as any).courses)
+      ? (certificate as any).courses[0]
+      : (certificate as any).courses;
+    const batch: any = Array.isArray((certificate as any).batches)
+      ? (certificate as any).batches[0]
+      : (certificate as any).batches;
+
     // Return only public-safe information (no student data)
     return NextResponse.json({
       success: true,
       valid: true,
       data: {
         certificateNumber: certificate.certificate_number,
-        courseName: certificate.courses?.name,
-        courseCode: certificate.courses?.code,
-        batchName: certificate.batches?.name,
-        batchDuration: certificate.batches
-          ? `${certificate.batches.start_date} to ${certificate.batches.end_date}`
+        courseName: course?.name ?? null,
+        courseCode: course?.code ?? null,
+        batchName: batch?.name ?? null,
+        batchDuration: batch
+          ? `${batch.start_date} to ${batch.end_date}`
           : null,
         instituteName: institute?.name || null,
         issuedAt: certificate.issued_at,

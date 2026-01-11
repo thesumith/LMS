@@ -65,7 +65,7 @@ export async function uploadContentFile(
     const supabase = await createSupabaseServerClient();
 
     // Convert File to ArrayBuffer if needed
-    let fileData: ArrayBuffer;
+    let fileData: ArrayBuffer | Uint8Array;
     if (file instanceof File) {
       fileData = await file.arrayBuffer();
     } else {

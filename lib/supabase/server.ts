@@ -6,14 +6,16 @@
  */
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import type { Database } from '@/types/database.types';
 import { getAuthCookieDomain } from '@/lib/supabase/cookie-domain';
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
   const cookieDomain = getAuthCookieDomain();
 
-  return createServerClient<Database>(
+  // NOTE:
+  // The repo's `types/database.types.ts` is currently a placeholder and doesn't fully represent the schema.
+  // Use an untyped client to keep Next.js build typechecking stable until real generated types are added.
+  return createServerClient<any>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -21,7 +23,13 @@ export async function createSupabaseServerClient() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(
+          cookiesToSet: Array<{
+            name: string;
+            value: string;
+            options?: Record<string, unknown>;
+          }>
+        ) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, {

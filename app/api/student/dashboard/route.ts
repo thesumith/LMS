@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Calculate course progress using database function
-        const { data: progressData, error: progressError } = await supabaseAdmin
+        const { data: progressData, error: progressError } = await (supabaseAdmin as any)
           .rpc('calculate_course_progress', {
             p_student_id: userId,
             p_course_id: courseId,

@@ -137,12 +137,27 @@ export async function POST(request: NextRequest) {
 
       // Send onboarding email (async, non-blocking)
       if (isTemporaryPassword) {
-        sendOnboardingEmail(normalizedEmail, firstName.trim(), userPassword, instituteId).catch(
-          (err) => {
-            console.error('Failed to send onboarding email:', err);
-            // Don't fail the request if email fails
-          }
-        );
+        void (async () => {
+          const { data: institute } = await supabaseAdmin
+            .from('institutes')
+            .select('name, subdomain')
+            .eq('id', instituteId)
+            .is('deleted_at', null)
+            .single();
+
+          if (!institute?.subdomain || !institute?.name) return;
+
+          await sendOnboardingEmail({
+            email: normalizedEmail,
+            instituteName: institute.name,
+            subdomain: institute.subdomain,
+            temporaryPassword: userPassword,
+            adminName: `${firstName.trim()} ${lastName.trim()}`,
+          });
+        })().catch((err) => {
+          console.error('Failed to send onboarding email:', err);
+          // Don't fail the request if email fails
+        });
       }
 
       // Fetch created user data

@@ -51,7 +51,13 @@ export async function POST(request: NextRequest) {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(
+          cookiesToSet: Array<{
+            name: string;
+            value: string;
+            options?: Record<string, unknown>;
+          }>
+        ) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, {
@@ -83,8 +89,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // NOTE: supabaseAdmin may not be strongly typed in this repo; avoid "never" inference during Next build typecheck.
+    const admin = supabaseAdmin as any;
+
     // Get user profile and roles
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile, error: profileError } = await admin
       .from('profiles')
       .select(`
         id,
@@ -104,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user roles (simplified - role_name is stored directly)
-    const { data: roles, error: rolesError } = await supabaseAdmin
+    const { data: roles, error: rolesError } = await admin
       .from('user_roles')
       .select('role_name')
       .eq('user_id', authData.user.id)
@@ -155,7 +164,7 @@ export async function POST(request: NextRequest) {
       // For other roles, dashboard requires institute subdomain
       if (!roleNames.includes('SUPER_ADMIN') && profile.institute_id) {
         // Get institute subdomain
-        const { data: institute, error: instituteError } = await supabaseAdmin
+        const { data: institute, error: instituteError } = await admin
           .from('institutes')
           .select('subdomain')
           .eq('id', profile.institute_id)

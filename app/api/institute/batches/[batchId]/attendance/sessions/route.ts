@@ -33,8 +33,8 @@ export async function POST(
   { params }: { params: { batchId: string } }
 ) {
   try {
-    const { instituteId, session } = await requireTenantApiContext(request);
-    const userId = session.userId;
+    const { instituteId, session: authSession } = await requireTenantApiContext(request);
+    const userId = authSession.userId;
 
     const { batchId } = params;
 
@@ -86,7 +86,7 @@ export async function POST(
     }
 
     // Create session (RLS will enforce access control)
-    const { data: session, error: sessionError } = await supabaseAdmin
+    const { data: createdSession, error: sessionError } = await supabaseAdmin
       .from('attendance_sessions')
       .insert({
         institute_id: instituteId,
@@ -112,7 +112,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: true,
-        data: session,
+        data: createdSession,
       },
       { status: 201 }
     );

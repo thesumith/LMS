@@ -62,7 +62,7 @@ export async function PATCH(
     }
 
     // Check if assignment can be edited (no submissions yet)
-    const { data: canEdit, error: canEditError } = await supabaseAdmin
+    const { data: canEdit, error: canEditError } = await (supabaseAdmin as any)
       .rpc('can_edit_assignment', { p_assignment_id: assignmentId });
 
     if (canEditError || !canEdit) {

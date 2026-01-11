@@ -28,8 +28,8 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const { instituteId, session } = await requireTenantApiContext(request);
-    const userId = session.userId;
+    const { instituteId, session: authSession } = await requireTenantApiContext(request);
+    const userId = authSession.userId;
 
     const { sessionId } = params;
 
@@ -38,7 +38,7 @@ export async function POST(
     }
 
     // Verify session exists
-    const { data: session, error: sessionError } = await supabaseAdmin
+    const { data: attendanceSession, error: sessionError } = await supabaseAdmin
       .from('attendance_sessions')
       .select('id, is_locked, batch_id')
       .eq('id', sessionId)
@@ -46,16 +46,16 @@ export async function POST(
       .is('deleted_at', null)
       .single();
 
-    if (sessionError || !session) {
+    if (sessionError || !attendanceSession) {
       throw new NotFoundError('Session not found');
     }
 
-    if (session.is_locked) {
+    if (attendanceSession.is_locked) {
       throw new ConflictError('Session is already locked');
     }
 
     // Lock the session using database function
-    const { data: locked, error: lockError } = await supabaseAdmin
+    const { data: locked, error: lockError } = await (supabaseAdmin as any)
       .rpc('lock_attendance_session', {
         p_session_id: sessionId,
         p_locked_by: userId,

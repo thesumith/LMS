@@ -17,7 +17,18 @@ export type Json =
 
 export interface Database {
   public: {
+    // NOTE:
+    // This file is currently a placeholder (not fully generated from Supabase).
+    // To keep Next.js `build` typechecking working across the codebase (which uses many tables & RPCs),
+    // we include permissive index signatures for tables/views/functions/enums.
+    // Replace this with the actual generated types when ready.
     Tables: {
+      [key: string]: {
+        Row: Record<string, any>;
+        Insert: Record<string, any>;
+        Update: Record<string, any>;
+        Relationships?: any[];
+      };
       institutes: {
         Row: {
           id: string;
@@ -178,6 +189,23 @@ export interface Database {
           created_at?: string;
         };
       };
+    };
+    Views: {
+      [key: string]: {
+        Row: Record<string, any>;
+      };
+    };
+    Functions: {
+      [key: string]: {
+        Args: Record<string, any>;
+        Returns: any;
+      };
+    };
+    Enums: {
+      [key: string]: string;
+    };
+    CompositeTypes: {
+      [key: string]: any;
     };
   };
 }

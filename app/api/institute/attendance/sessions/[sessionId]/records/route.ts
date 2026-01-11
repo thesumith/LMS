@@ -43,8 +43,8 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const { instituteId, session } = await requireTenantApiContext(request);
-    const userId = session.userId;
+    const { instituteId, session: authSession } = await requireTenantApiContext(request);
+    const userId = authSession.userId;
 
     const { sessionId } = params;
 
@@ -53,7 +53,7 @@ export async function POST(
     }
 
     // Verify session exists and is not locked
-    const { data: session, error: sessionError } = await supabaseAdmin
+    const { data: attendanceSession, error: sessionError } = await supabaseAdmin
       .from('attendance_sessions')
       .select('id, batch_id, is_locked, session_date')
       .eq('id', sessionId)
@@ -61,11 +61,11 @@ export async function POST(
       .is('deleted_at', null)
       .single();
 
-    if (sessionError || !session) {
+    if (sessionError || !attendanceSession) {
       throw new NotFoundError('Session not found');
     }
 
-    if (session.is_locked) {
+    if (attendanceSession.is_locked) {
       throw new ConflictError('Cannot mark attendance. Session is locked.');
     }
 
@@ -100,7 +100,7 @@ export async function POST(
       const { data: enrollments, error: enrollmentError } = await supabaseAdmin
         .from('batch_students')
         .select('student_id')
-        .eq('batch_id', session.batch_id)
+        .eq('batch_id', attendanceSession.batch_id)
         .in('student_id', studentIds)
         .eq('status', 'active')
         .is('deleted_at', null);
@@ -122,7 +122,7 @@ export async function POST(
       const recordsToInsert = bulkRequest.records.map((record) => ({
         institute_id: instituteId,
         session_id: sessionId,
-        batch_id: session.batch_id,
+        batch_id: attendanceSession.batch_id,
         student_id: record.studentId,
         status: record.status,
         marked_by: userId,
@@ -173,7 +173,7 @@ export async function POST(
       const { data: enrollment, error: enrollmentError } = await supabaseAdmin
         .from('batch_students')
         .select('student_id')
-        .eq('batch_id', session.batch_id)
+        .eq('batch_id', attendanceSession.batch_id)
         .eq('student_id', singleRequest.studentId)
         .eq('status', 'active')
         .is('deleted_at', null)
@@ -190,7 +190,7 @@ export async function POST(
           {
             institute_id: instituteId,
             session_id: sessionId,
-            batch_id: session.batch_id,
+            batch_id: attendanceSession.batch_id,
             student_id: singleRequest.studentId,
             status: singleRequest.status,
             marked_by: userId,

@@ -43,7 +43,13 @@ export async function POST(request: NextRequest) {
           getAll() {
             return cookieStore.getAll();
           },
-          setAll(cookiesToSet) {
+          setAll(
+            _cookiesToSet: Array<{
+              name: string;
+              value: string;
+              options?: Record<string, unknown>;
+            }>
+          ) {
             // Don't set cookies in this route - password change doesn't require new session
           },
         },
@@ -98,7 +104,10 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    const { data: userData } = await supabaseAdmin
+    // NOTE: supabaseAdmin may not be strongly typed in this repo; avoid "never" inference during Next build typecheck.
+    const admin = supabaseAdmin as any;
+
+    const { data: userData } = await admin
       .from('profiles')
       .select('email')
       .eq('id', userId)
@@ -129,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 5: Update must_change_password flag to false
-    const { error: profileError } = await supabaseAdmin
+    const { error: profileError } = await admin
       .from('profiles')
       .update({ must_change_password: false })
       .eq('id', userId);
@@ -141,7 +150,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 6: Get user profile to determine redirect
-    const { data: userProfile } = await supabaseAdmin
+    const { data: userProfile } = await admin
       .from('profiles')
       .select('institute_id')
       .eq('id', userId)
@@ -155,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     if (userProfile?.institute_id) {
       // Get institute subdomain
-      const { data: institute } = await supabaseAdmin
+      const { data: institute } = await admin
         .from('institutes')
         .select('subdomain')
         .eq('id', userProfile.institute_id)

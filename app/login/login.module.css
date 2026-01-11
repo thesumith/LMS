@@ -1,0 +1,36 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap");
+
+.root {
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.root :global(.material-symbols-outlined) {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.root :global(.terminal-glow) {
+  box-shadow: 0 0 20px rgba(55, 19, 236, 0.2);
+}
+
+.root :global(.digital-rain-overlay) {
+  background: linear-gradient(rgba(19, 16, 34, 0.95), rgba(19, 16, 34, 0.95)),
+    url("https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80");
+  background-size: cover;
+  background-blend-mode: multiply;
+}
+
+
