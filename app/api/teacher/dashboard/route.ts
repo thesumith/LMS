@@ -7,12 +7,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireTenantApiContext } from '@/lib/api/context';
 import {
   formatErrorResponse,
-  UnauthorizedError,
-  ForbiddenError,
 } from '@/lib/errors/api-errors';
 import { verifySuperAdmin } from '@/lib/auth/verify-super-admin';
 
@@ -28,17 +26,8 @@ import { verifySuperAdmin } from '@/lib/auth/verify-super-admin';
  */
 export async function GET(request: NextRequest) {
   try {
-    const headersList = await headers();
-    const instituteId = headersList.get('x-institute-id');
-    const userId = headersList.get('x-user-id');
-
-    if (!instituteId) {
-      throw new UnauthorizedError('Institute context required');
-    }
-
-    if (!userId) {
-      throw new UnauthorizedError('Authentication required');
-    }
+    const { instituteId, session } = await requireTenantApiContext(request);
+    const userId = session.userId;
 
     // Verify user is SUPER_ADMIN or has TEACHER role
     // RLS will enforce this, but we check here for better error messages

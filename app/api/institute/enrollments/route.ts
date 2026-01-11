@@ -6,11 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireTenantApiContext } from '@/lib/api/context';
 import {
   formatErrorResponse,
-  UnauthorizedError,
   ValidationError,
   NotFoundError,
   ConflictError,
@@ -36,17 +35,7 @@ interface UpdateEnrollmentRequest {
  */
 export async function POST(request: NextRequest) {
   try {
-    const headersList = await headers();
-    const instituteId = headersList.get('x-institute-id');
-    const userId = headersList.get('x-user-id');
-
-    if (!instituteId) {
-      throw new UnauthorizedError('Institute context required');
-    }
-
-    if (!userId) {
-      throw new UnauthorizedError('Authentication required');
-    }
+    const { instituteId } = await requireTenantApiContext(request);
 
     // Parse request body
     const body: EnrollStudentRequest = await request.json();
@@ -170,17 +159,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const headersList = await headers();
-    const instituteId = headersList.get('x-institute-id');
-    const userId = headersList.get('x-user-id');
-
-    if (!instituteId) {
-      throw new UnauthorizedError('Institute context required');
-    }
-
-    if (!userId) {
-      throw new UnauthorizedError('Authentication required');
-    }
+    const { instituteId } = await requireTenantApiContext(request);
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -252,17 +231,7 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const headersList = await headers();
-    const instituteId = headersList.get('x-institute-id');
-    const userId = headersList.get('x-user-id');
-
-    if (!instituteId) {
-      throw new UnauthorizedError('Institute context required');
-    }
-
-    if (!userId) {
-      throw new UnauthorizedError('Authentication required');
-    }
+    const { instituteId } = await requireTenantApiContext(request);
 
     // Parse request body
     const body: UpdateEnrollmentRequest = await request.json();

@@ -6,11 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireTenantApiContext } from '@/lib/api/context';
 import {
   formatErrorResponse,
-  UnauthorizedError,
   ValidationError,
   ConflictError,
 } from '@/lib/errors/api-errors';
@@ -32,18 +31,7 @@ interface CreateCourseRequest {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Get institute context from middleware headers
-    const headersList = await headers();
-    const instituteId = headersList.get('x-institute-id');
-    const userId = headersList.get('x-user-id');
-
-    if (!instituteId) {
-      throw new UnauthorizedError('Institute context required');
-    }
-
-    if (!userId) {
-      throw new UnauthorizedError('Authentication required');
-    }
+    const { instituteId } = await requireTenantApiContext(request);
 
     // Parse request body
     const body: CreateCourseRequest = await request.json();
@@ -112,17 +100,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const headersList = await headers();
-    const instituteId = headersList.get('x-institute-id');
-    const userId = headersList.get('x-user-id');
-
-    if (!instituteId) {
-      throw new UnauthorizedError('Institute context required');
-    }
-
-    if (!userId) {
-      throw new UnauthorizedError('Authentication required');
-    }
+    const { instituteId } = await requireTenantApiContext(request);
 
     // Get query parameters
     const { searchParams } = new URL(request.url);

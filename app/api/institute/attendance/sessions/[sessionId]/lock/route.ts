@@ -6,11 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireTenantApiContext } from '@/lib/api/context';
 import {
   formatErrorResponse,
-  UnauthorizedError,
   ValidationError,
   NotFoundError,
   ConflictError,
@@ -29,17 +28,8 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const headersList = await headers();
-    const instituteId = headersList.get('x-institute-id');
-    const userId = headersList.get('x-user-id');
-
-    if (!instituteId) {
-      throw new UnauthorizedError('Institute context required');
-    }
-
-    if (!userId) {
-      throw new UnauthorizedError('Authentication required');
-    }
+    const { instituteId, session } = await requireTenantApiContext(request);
+    const userId = session.userId;
 
     const { sessionId } = params;
 

@@ -6,13 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireTenantApiContext } from '@/lib/api/context';
 import { generateTemporaryPassword } from '@/lib/utils/password';
 import { sendOnboardingEmail } from '@/lib/utils/email';
 import {
   formatErrorResponse,
-  UnauthorizedError,
   ValidationError,
   ConflictError,
   InternalServerError,
@@ -36,17 +35,7 @@ interface CreateUserRequest {
  */
 export async function POST(request: NextRequest) {
   try {
-    const headersList = await headers();
-    const instituteId = headersList.get('x-institute-id');
-    const userId = headersList.get('x-user-id');
-
-    if (!instituteId) {
-      throw new UnauthorizedError('Institute context required');
-    }
-
-    if (!userId) {
-      throw new UnauthorizedError('Authentication required');
-    }
+    const { instituteId } = await requireTenantApiContext(request);
 
     // Parse request body
     const body: CreateUserRequest = await request.json();
@@ -193,17 +182,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const headersList = await headers();
-    const instituteId = headersList.get('x-institute-id');
-    const userId = headersList.get('x-user-id');
-
-    if (!instituteId) {
-      throw new UnauthorizedError('Institute context required');
-    }
-
-    if (!userId) {
-      throw new UnauthorizedError('Authentication required');
-    }
+    const { instituteId } = await requireTenantApiContext(request);
 
     // Fetch profiles
     const { data: profiles, error: profilesError } = await supabaseAdmin
