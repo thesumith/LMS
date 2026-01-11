@@ -49,6 +49,7 @@ export const PUBLIC_ROUTES = [
   '/api/auth',
   '/_next',
   '/favicon.ico',
+  '/institute-not-found',
 ];
 
 /**

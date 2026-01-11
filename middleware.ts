@@ -139,7 +139,13 @@ export async function middleware(request: NextRequest) {
   
   if (!institute) {
     // Institute doesn't exist or is suspended
-    return NextResponse.redirect(new URL('/institute-not-found', request.url));
+    const currentUrl = new URL(request.url);
+    const hostnameParts = currentUrl.hostname.split('.');
+    const isLocalhost = hostnameParts.includes('localhost') || hostnameParts.includes('127.0.0.1');
+    const mainHostname = isLocalhost ? 'localhost' : hostnameParts.slice(-2).join('.');
+    const port = currentUrl.port ? `:${currentUrl.port}` : '';
+    const mainDomainUrl = `${currentUrl.protocol}//${mainHostname}${port}/institute-not-found`;
+    return NextResponse.redirect(new URL(mainDomainUrl));
   }
   
   // Step 5: Get authentication session
