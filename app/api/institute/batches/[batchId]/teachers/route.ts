@@ -78,7 +78,7 @@ export async function POST(
       .in('id', uniqueTeacherIds)
       .is('deleted_at', null)
       .eq('user_roles.role_name', 'TEACHER')
-      .eq('user_roles.deleted_at', null);
+      .is('user_roles.deleted_at', null);
 
     if (teachersError) {
       throw new Error(`Failed to validate teachers: ${teachersError.message}`);
@@ -144,6 +144,7 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
+    console.error('POST /api/institute/batches/[batchId]/teachers failed:', error);
     const { statusCode, body } = formatErrorResponse(error);
     return NextResponse.json(body, { status: statusCode });
   }

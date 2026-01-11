@@ -74,8 +74,10 @@ export async function POST(
       .from('attendance_sessions')
       .select(`
         *,
-        batches(name),
-        courses(name, code),
+        batches(
+          name,
+          courses(name, code)
+        ),
         profiles!attendance_sessions_locked_by_fkey(
           id,
           email,

@@ -258,8 +258,11 @@ export async function GET(
       .select(
         `
           *,
-          batches(id, name),
-          courses(id, name, code),
+          batches(
+            id,
+            name,
+            courses(id, name, code)
+          ),
           lessons(id, title),
           profiles!attendance_sessions_created_by_fkey(
             id,

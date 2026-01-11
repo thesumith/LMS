@@ -178,6 +178,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    console.error('GET /api/teacher/dashboard failed:', error);
     const { statusCode, body } = formatErrorResponse(error);
     return NextResponse.json(body, { status: statusCode });
   }

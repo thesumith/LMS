@@ -48,8 +48,10 @@ export async function GET(request: NextRequest) {
           session_type,
           title,
           is_locked,
-          batches(name),
-          courses(name, code),
+          batches(
+            name,
+            courses(name, code)
+          ),
           lessons(id, title)
         )
       `)

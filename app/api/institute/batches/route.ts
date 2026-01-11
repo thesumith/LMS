@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         .in('id', teacherIds)
         .is('deleted_at', null)
         .eq('user_roles.role_name', 'TEACHER')
-        .eq('user_roles.deleted_at', null);
+        .is('user_roles.deleted_at', null);
 
       if (teachersError) {
         // Rollback: delete batch

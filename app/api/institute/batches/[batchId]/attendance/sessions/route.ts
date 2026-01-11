@@ -100,8 +100,10 @@ export async function POST(
       })
       .select(`
         *,
-        batches(name),
-        courses(name, code)
+        batches(
+          name,
+          courses(name, code)
+        )
       `)
       .single();
 
@@ -154,8 +156,10 @@ export async function GET(
       .from('attendance_sessions')
       .select(`
         *,
-        batches(name),
-        courses(name, code),
+        batches(
+          name,
+          courses(name, code)
+        ),
         profiles!attendance_sessions_created_by_fkey(
           id,
           email,
