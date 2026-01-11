@@ -252,6 +252,65 @@ export async function GET(
       throw new ValidationError('Session ID is required');
     }
 
+    // Fetch session metadata (needed even when there are zero records)
+    const { data: sessionMeta, error: sessionMetaError } = await supabaseAdmin
+      .from('attendance_sessions')
+      .select(
+        `
+          *,
+          batches(id, name),
+          courses(id, name, code),
+          lessons(id, title),
+          profiles!attendance_sessions_created_by_fkey(
+            id,
+            email,
+            first_name,
+            last_name
+          ),
+          profiles!attendance_sessions_locked_by_fkey(
+            id,
+            email,
+            first_name,
+            last_name
+          )
+        `
+      )
+      .eq('id', sessionId)
+      .eq('institute_id', instituteId)
+      .is('deleted_at', null)
+      .single();
+
+    if (sessionMetaError || !sessionMeta) {
+      throw new NotFoundError('Attendance session not found or access denied');
+    }
+
+    // Fetch active students enrolled in the session's batch
+    const { data: students, error: studentsError } = await supabaseAdmin
+      .from('batch_students')
+      .select(
+        `
+          id,
+          student_id,
+          status,
+          enrolled_at,
+          profiles!batch_students_student_id_fkey(
+            id,
+            email,
+            first_name,
+            last_name
+          )
+        `
+      )
+      .eq('batch_id', sessionMeta.batch_id)
+      .eq('institute_id', instituteId)
+      .eq('status', 'active')
+      .is('deleted_at', null)
+      .order('enrolled_at', { ascending: true });
+
+    if (studentsError) {
+      throw new Error(`Failed to fetch enrolled students: ${studentsError.message}`);
+    }
+
     // Fetch records (RLS will filter automatically based on user role)
     const { data: records, error } = await supabaseAdmin
       .from('attendance_records')
@@ -289,6 +348,10 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: records || [],
+      meta: {
+        session: sessionMeta,
+        students: students || [],
+      },
     });
   } catch (error) {
     const { statusCode, body } = formatErrorResponse(error);
