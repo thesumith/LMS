@@ -32,6 +32,34 @@ export function extractSubdomain(host: string): SubdomainInfo {
       isMainDomain: true,
     };
   }
+
+  // Handle localhost subdomains for development (e.g. tenant.localhost:3000)
+  // NOTE: Browsers may not share cookies across *.localhost, but routing must still be correct.
+  if (hostWithoutPort.endsWith('.localhost')) {
+    const parts = hostWithoutPort.split('.');
+    // hostWithoutPort is guaranteed to have at least 2 parts here.
+    const subdomainParts = parts.slice(0, -1); // everything before "localhost"
+    const subdomain = subdomainParts.join('.');
+
+    if (!subdomain) {
+      return {
+        subdomain: null,
+        domain: host,
+        isMainDomain: true,
+      };
+    }
+
+    // Preserve port (if any) in the domain by stripping just the left-most label from the original host.
+    // e.g. "school.localhost:3000" -> "localhost:3000"
+    const dotIdx = host.indexOf('.');
+    const domainWithPort = dotIdx >= 0 ? host.substring(dotIdx + 1) : host;
+
+    return {
+      subdomain,
+      domain: domainWithPort,
+      isMainDomain: false,
+    };
+  }
   
   // Split by dots
   const parts = hostWithoutPort.split('.');

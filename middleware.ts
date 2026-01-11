@@ -82,7 +82,13 @@ export async function middleware(request: NextRequest) {
       if (tenantSubdomain) {
         const currentUrl = new URL(request.url);
         const port = currentUrl.port ? `:${currentUrl.port}` : '';
-        const target = `${currentUrl.protocol}//${tenantSubdomain}.${currentUrl.hostname}${port}${pathname}${currentUrl.search}`;
+        // Build URL against the base host (main domain) to avoid accidental double-subdomain
+        // if host parsing/configuration is off in some environments.
+        const hostnameParts = currentUrl.hostname.split('.');
+        const isLocalhost = hostnameParts.includes('localhost') || hostnameParts.includes('127.0.0.1');
+        const baseHostname = isLocalhost ? 'localhost' : hostnameParts.slice(-2).join('.');
+
+        const target = `${currentUrl.protocol}//${tenantSubdomain}.${baseHostname}${port}${pathname}${currentUrl.search}`;
         return NextResponse.redirect(new URL(target));
       }
     }
