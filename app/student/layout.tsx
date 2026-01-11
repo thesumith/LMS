@@ -14,6 +14,7 @@ export default function StudentLayout({
   const navItems = [
     { name: 'Dashboard', href: '/student/dashboard', icon: '📊' },
     { name: 'My Courses', href: '/student/courses', icon: '📚' },
+    { name: 'Classes', href: '/student/classes', icon: '📅' },
     { name: 'Assignments', href: '/student/assignments', icon: '📝' },
     { name: 'Certificates', href: '/student/certificates', icon: '🎓' },
   ];

@@ -49,6 +49,26 @@ export function generateAssignmentSubmissionPath(
 }
 
 /**
+ * Generate storage path for class session materials
+ *
+ * Path structure:
+ * institute/{institute_id}/courses/{course_id}/batches/{batch_id}/classes/{class_session_id}/materials/{filename}
+ */
+export function generateClassSessionMaterialPath(
+  instituteId: string,
+  courseId: string,
+  batchId: string,
+  classSessionId: string,
+  filename: string
+): string {
+  const sanitizedFilename = filename
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
+    .replace(/_{2,}/g, '_');
+
+  return `institute/${instituteId}/courses/${courseId}/batches/${batchId}/classes/${classSessionId}/materials/${sanitizedFilename}`;
+}
+
+/**
  * Upload file to Supabase Storage
  * 
  * @param file - File to upload

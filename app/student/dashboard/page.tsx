@@ -8,6 +8,7 @@
 import { headers } from 'next/headers';
 import { getStudentDashboard } from '@/lib/data/student-dashboard';
 import Link from 'next/link';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export default async function StudentDashboardPage() {
   const headersList = await headers();
@@ -41,6 +42,29 @@ export default async function StudentDashboardPage() {
       </div>
     );
   }
+
+  // Upcoming classes (RLS enforced)
+  const supabase = await createSupabaseServerClient();
+  const { data: upcomingClasses } = await supabase
+    .from('class_sessions')
+    .select(
+      `
+      id,
+      title,
+      scheduled_at,
+      duration_minutes,
+      meeting_link,
+      is_cancelled,
+      batches(name),
+      courses(name, code)
+    `
+    )
+    .eq('institute_id', instituteId)
+    .is('deleted_at', null)
+    .eq('is_cancelled', false)
+    .gte('scheduled_at', new Date().toISOString())
+    .order('scheduled_at', { ascending: true })
+    .limit(5);
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -93,6 +117,62 @@ export default async function StudentDashboardPage() {
           color="green"
         />
       </div>
+
+      {/* Upcoming Classes */}
+      {(upcomingClasses || []).length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Upcoming Classes</h2>
+              <p className="text-sm text-gray-600 mt-0.5">Join directly from here</p>
+            </div>
+            <Link href="/student/classes" className="text-sm text-blue-600 hover:text-blue-900 font-medium">
+              View All
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {(upcomingClasses || []).map((c: any) => (
+              <div key={c.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{c.title}</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {(() => {
+                        const course = Array.isArray(c.courses) ? c.courses[0] : c.courses;
+                        const batch = Array.isArray(c.batches) ? c.batches[0] : c.batches;
+                        return (
+                          <>
+                            {course?.code ? `${course.code} — ` : ''}
+                            {course?.name || '—'} • {batch?.name || '—'}
+                          </>
+                        );
+                      })()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(c.scheduled_at).toLocaleString()}
+                    </p>
+                    <div className="mt-2 flex items-center justify-end gap-3">
+                      <Link href={`/student/classes/${c.id}`} className="text-sm text-gray-700 hover:text-gray-900 font-medium">
+                        Materials
+                      </Link>
+                      <a
+                        href={c.meeting_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                      >
+                        Join
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Upcoming Exams */}
       {dashboard.upcomingExams.length > 0 && (

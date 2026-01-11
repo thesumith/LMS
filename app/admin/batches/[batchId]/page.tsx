@@ -24,6 +24,15 @@ type TeacherAssignment = {
   profiles?: { id: string; email: string; first_name: string | null; last_name: string | null } | null;
 };
 
+type Teacher = {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  roles: string[];
+  is_active: boolean;
+};
+
 type Enrollment = {
   id: string;
   student_id: string;
@@ -64,6 +73,9 @@ export default function AdminBatchDetailPage({
 
   const [batch, setBatch] = useState<Batch | null>(null);
   const [teachers, setTeachers] = useState<TeacherAssignment[]>([]);
+  const [allTeachers, setAllTeachers] = useState<Teacher[]>([]);
+  const [selectedTeacherIds, setSelectedTeacherIds] = useState<string[]>([]);
+  const [savingTeachers, setSavingTeachers] = useState(false);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +89,7 @@ export default function AdminBatchDetailPage({
         setLoading(true);
         setError('');
 
-        const [batchesRes, teachersRes, enrollmentsRes, assignmentsRes] = await Promise.all([
+        const [batchesRes, teachersRes, enrollmentsRes, assignmentsRes, usersRes] = await Promise.all([
           readJson<{ success: boolean; data: Batch[] }>(`/api/institute/batches`),
           readJson<{ success: boolean; data: TeacherAssignment[] }>(
             `/api/institute/batches/${batchId}/teachers`
@@ -88,6 +100,7 @@ export default function AdminBatchDetailPage({
           readJson<{ success: boolean; data: Assignment[] }>(
             `/api/institute/batches/${batchId}/assignments?active=true`
           ),
+          readJson<{ success: boolean; data: Teacher[] }>(`/api/institute/users`),
         ]);
 
         const found = (batchesRes.data || []).find((b) => b.id === batchId) || null;
@@ -95,6 +108,8 @@ export default function AdminBatchDetailPage({
         if (!cancelled) {
           setBatch(found);
           setTeachers(teachersRes.data || []);
+          const all = usersRes.data || [];
+          setAllTeachers(all.filter((u) => (u.roles || []).includes('TEACHER')).filter((u) => u.is_active !== false));
           setEnrollments(enrollmentsRes.data || []);
           setAssignments(assignmentsRes.data || []);
         }
@@ -110,6 +125,46 @@ export default function AdminBatchDetailPage({
       cancelled = true;
     };
   }, [batchId]);
+
+  async function refreshTeacherAssignments() {
+    const teachersRes = await readJson<{ success: boolean; data: TeacherAssignment[] }>(
+      `/api/institute/batches/${batchId}/teachers`
+    );
+    setTeachers(teachersRes.data || []);
+  }
+
+  async function assignSelectedTeachers() {
+    if (selectedTeacherIds.length === 0) return;
+    try {
+      setSavingTeachers(true);
+      await readJson(`/api/institute/batches/${batchId}/teachers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teacherIds: selectedTeacherIds }),
+      });
+      setSelectedTeacherIds([]);
+      await refreshTeacherAssignments();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to assign teachers');
+    } finally {
+      setSavingTeachers(false);
+    }
+  }
+
+  async function removeTeacher(teacherId: string) {
+    try {
+      setSavingTeachers(true);
+      await readJson(
+        `/api/institute/batches/${batchId}/teachers?teacherIds=${encodeURIComponent(teacherId)}`,
+        { method: 'DELETE' }
+      );
+      await refreshTeacherAssignments();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to remove teacher');
+    } finally {
+      setSavingTeachers(false);
+    }
+  }
 
   const stats = useMemo(() => {
     const activeAssignments = assignments.filter((a) => a.is_active).length;
@@ -200,6 +255,50 @@ export default function AdminBatchDetailPage({
               <h2 className="text-lg font-semibold text-gray-900">Teachers</h2>
               <span className="text-sm text-gray-500">{teachers.length} assigned</span>
             </div>
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex flex-col md:flex-row md:items-end gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                    Assign teachers
+                  </label>
+                  <select
+                    multiple
+                    value={selectedTeacherIds}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions).map((o) => o.value);
+                      setSelectedTeacherIds(selected);
+                    }}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    disabled={savingTeachers}
+                  >
+                    {allTeachers.length === 0 ? (
+                      <option value="" disabled>
+                        No teachers found
+                      </option>
+                    ) : (
+                      allTeachers.map((t) => {
+                        const name = `${t.first_name || ''} ${t.last_name || ''}`.trim() || t.email;
+                        return (
+                          <option key={t.id} value={t.id}>
+                            {name} ({t.email})
+                          </option>
+                        );
+                      })
+                    )}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Teachers only see batches they’re assigned to.
+                  </p>
+                </div>
+                <button
+                  className="rounded-md bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  onClick={assignSelectedTeachers}
+                  disabled={savingTeachers || selectedTeacherIds.length === 0}
+                >
+                  {savingTeachers ? 'Saving…' : 'Assign'}
+                </button>
+              </div>
+            </div>
             {teachers.length === 0 ? (
               <div className="px-6 py-12 text-center text-sm text-gray-500">
                 No teachers assigned to this batch.
@@ -215,6 +314,9 @@ export default function AdminBatchDetailPage({
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Email
                       </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -222,6 +324,15 @@ export default function AdminBatchDetailPage({
                       <tr key={t.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 text-sm text-gray-900">{displayName(t.profiles)}</td>
                         <td className="px-6 py-4 text-sm text-gray-500">{t.profiles?.email || '—'}</td>
+                        <td className="px-6 py-4 text-right text-sm font-medium">
+                          <button
+                            className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                            onClick={() => removeTeacher(t.teacher_id)}
+                            disabled={savingTeachers}
+                          >
+                            Remove
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

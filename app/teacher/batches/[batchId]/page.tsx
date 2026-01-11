@@ -42,6 +42,23 @@ type AttendanceSession = {
   is_locked: boolean;
 };
 
+type ClassSession = {
+  id: string;
+  title: string;
+  description: string | null;
+  scheduled_at: string;
+  duration_minutes: number | null;
+  meeting_link: string;
+  is_cancelled: boolean;
+};
+
+type ClassMaterial = {
+  id: string;
+  title: string;
+  created_at: string;
+  signed_url: string | null;
+};
+
 async function readJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   const json = await res.json().catch(() => ({}));
@@ -66,6 +83,19 @@ export default function TeacherBatchDetailPage({
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
+  const [classes, setClasses] = useState<ClassSession[]>([]);
+  const [materialsByClass, setMaterialsByClass] = useState<Record<string, ClassMaterial[]>>({});
+  const [materialsOpen, setMaterialsOpen] = useState<Record<string, boolean>>({});
+  const [classesError, setClassesError] = useState('');
+  const [creatingClass, setCreatingClass] = useState(false);
+  const [uploadingForClass, setUploadingForClass] = useState<Record<string, boolean>>({});
+  const [newClass, setNewClass] = useState({
+    title: '',
+    description: '',
+    scheduledAtLocal: '',
+    durationMinutes: '',
+    meetingLink: '',
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -77,7 +107,7 @@ export default function TeacherBatchDetailPage({
         setLoading(true);
         setError('');
 
-        const [batchesRes, enrollmentsRes, assignmentsRes, sessionsRes] = await Promise.all([
+        const [batchesRes, enrollmentsRes, assignmentsRes, sessionsRes, classesRes] = await Promise.all([
           readJson<{ success: boolean; data: Batch[] }>(`/api/institute/batches`),
           readJson<{ success: boolean; data: Enrollment[] }>(
             `/api/institute/enrollments?batchId=${encodeURIComponent(batchId)}&status=active`
@@ -88,6 +118,7 @@ export default function TeacherBatchDetailPage({
           readJson<{ success: boolean; data: AttendanceSession[] }>(
             `/api/institute/batches/${batchId}/attendance/sessions`
           ),
+          readJson<{ success: boolean; data: ClassSession[] }>(`/api/institute/batches/${batchId}/classes`),
         ]);
 
         const found = (batchesRes.data || []).find((b) => b.id === batchId) || null;
@@ -97,6 +128,8 @@ export default function TeacherBatchDetailPage({
           setEnrollments(enrollmentsRes.data || []);
           setAssignments(assignmentsRes.data || []);
           setSessions(sessionsRes.data || []);
+          setClasses(classesRes.data || []);
+          setClassesError('');
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load batch');
@@ -110,6 +143,89 @@ export default function TeacherBatchDetailPage({
       cancelled = true;
     };
   }, [batchId]);
+
+  async function refreshClasses() {
+    try {
+      const res = await readJson<{ success: boolean; data: ClassSession[] }>(`/api/institute/batches/${batchId}/classes`);
+      setClasses(res.data || []);
+      setClassesError('');
+    } catch (e) {
+      setClassesError(e instanceof Error ? e.message : 'Failed to load classes');
+    }
+  }
+
+  async function createClassSession() {
+    try {
+      setCreatingClass(true);
+      setClassesError('');
+
+      if (!newClass.title.trim()) throw new Error('Title is required');
+      if (!newClass.scheduledAtLocal) throw new Error('Scheduled time is required');
+      if (!newClass.meetingLink.trim()) throw new Error('Meeting link is required');
+
+      const scheduledIso = new Date(newClass.scheduledAtLocal).toISOString();
+      const duration =
+        newClass.durationMinutes.trim() === '' ? null : Number(newClass.durationMinutes.trim());
+
+      await readJson(`/api/institute/batches/${batchId}/classes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newClass.title,
+          description: newClass.description || undefined,
+          scheduledAt: scheduledIso,
+          durationMinutes: duration,
+          meetingLink: newClass.meetingLink,
+        }),
+      });
+
+      setNewClass({ title: '', description: '', scheduledAtLocal: '', durationMinutes: '', meetingLink: '' });
+      await refreshClasses();
+    } catch (e) {
+      setClassesError(e instanceof Error ? e.message : 'Failed to create class');
+    } finally {
+      setCreatingClass(false);
+    }
+  }
+
+  async function toggleMaterials(classId: string) {
+    const next = !materialsOpen[classId];
+    setMaterialsOpen((prev) => ({ ...prev, [classId]: next }));
+    if (!next) return;
+    if (materialsByClass[classId]) return;
+    try {
+      const res = await readJson<{ success: boolean; data: ClassMaterial[] }>(`/api/institute/classes/${classId}/materials`);
+      setMaterialsByClass((prev) => ({ ...prev, [classId]: res.data || [] }));
+    } catch (e) {
+      setClassesError(e instanceof Error ? e.message : 'Failed to load materials');
+    }
+  }
+
+  async function uploadMaterial(classId: string, file: File, title?: string) {
+    try {
+      setUploadingForClass((prev) => ({ ...prev, [classId]: true }));
+      setClassesError('');
+
+      const form = new FormData();
+      form.append('file', file);
+      if (title?.trim()) form.append('title', title.trim());
+
+      const res = await readJson<{ success: boolean; data: ClassMaterial }>(`/api/institute/classes/${classId}/materials`, {
+        method: 'POST',
+        body: form,
+      });
+
+      setMaterialsByClass((prev) => {
+        const current = prev[classId] || [];
+        return { ...prev, [classId]: [res.data, ...current] };
+      });
+      setMaterialsOpen((prev) => ({ ...prev, [classId]: true }));
+    } catch (e) {
+      setClassesError(e instanceof Error ? e.message : 'Failed to upload material');
+    } finally {
+      setUploadingForClass((prev) => ({ ...prev, [classId]: false }));
+    }
+  }
 
   const stats = useMemo(() => {
     const upcomingSessions = sessions.filter((s) => {
@@ -193,6 +309,145 @@ export default function TeacherBatchDetailPage({
             <StatCard title="Assignments" value={stats.assignmentCount} color="blue" />
             <StatCard title="Sessions" value={stats.sessionCount} color="green" />
             <StatCard title="Upcoming" value={stats.upcomingSessions} color="orange" />
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Classes</h2>
+              <span className="text-sm text-gray-500">{classes.length} total</span>
+            </div>
+
+            {classesError && (
+              <div className="px-6 py-3 bg-red-50 border-b border-red-200 text-sm text-red-700">
+                {classesError}
+              </div>
+            )}
+
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <input
+                  className="md:col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Class title"
+                  value={newClass.title}
+                  onChange={(e) => setNewClass((p) => ({ ...p, title: e.target.value }))}
+                />
+                <input
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  type="datetime-local"
+                  value={newClass.scheduledAtLocal}
+                  onChange={(e) => setNewClass((p) => ({ ...p, scheduledAtLocal: e.target.value }))}
+                />
+                <input
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Duration (min)"
+                  inputMode="numeric"
+                  value={newClass.durationMinutes}
+                  onChange={(e) => setNewClass((p) => ({ ...p, durationMinutes: e.target.value }))}
+                />
+                <button
+                  className="rounded-md bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  onClick={createClassSession}
+                  disabled={creatingClass}
+                >
+                  {creatingClass ? 'Creating…' : 'Schedule Class'}
+                </button>
+              </div>
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input
+                  className="md:col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Meeting link (Zoom/Google Meet/etc)"
+                  value={newClass.meetingLink}
+                  onChange={(e) => setNewClass((p) => ({ ...p, meetingLink: e.target.value }))}
+                />
+                <input
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Short description (optional)"
+                  value={newClass.description}
+                  onChange={(e) => setNewClass((p) => ({ ...p, description: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {classes.length === 0 ? (
+              <div className="px-6 py-12 text-center text-sm text-gray-500">No classes scheduled yet.</div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {classes.map((c) => (
+                  <div key={c.id} className="px-6 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{c.title}</p>
+                          {c.is_cancelled && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              Cancelled
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {new Date(c.scheduled_at).toLocaleString()}
+                          {c.duration_minutes ? ` • ${c.duration_minutes} min` : ''}
+                        </p>
+                        {c.description && <p className="text-sm text-gray-500 mt-2 whitespace-pre-wrap">{c.description}</p>}
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <a
+                          href={c.meeting_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-medium text-blue-600 hover:text-blue-900"
+                        >
+                          Join Link
+                        </a>
+                        <button
+                          className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                          onClick={() => toggleMaterials(c.id)}
+                        >
+                          {materialsOpen[c.id] ? 'Hide Materials' : 'Materials'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {materialsOpen[c.id] && (
+                      <div className="mt-4 bg-gray-50 border border-gray-200 rounded-md p-4 space-y-3">
+                        <MaterialUploader
+                          disabled={!!uploadingForClass[c.id]}
+                          onUpload={(file, title) => uploadMaterial(c.id, file, title)}
+                        />
+
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Files</p>
+                          {(materialsByClass[c.id] || []).length === 0 ? (
+                            <p className="text-sm text-gray-500">No materials uploaded yet.</p>
+                          ) : (
+                            <ul className="space-y-2">
+                              {(materialsByClass[c.id] || []).map((m) => (
+                                <li key={m.id} className="flex items-center justify-between gap-4">
+                                  <div className="min-w-0">
+                                    <p className="text-sm text-gray-900 truncate">{m.title}</p>
+                                    <p className="text-xs text-gray-500">{new Date(m.created_at).toLocaleString()}</p>
+                                  </div>
+                                  <a
+                                    href={m.signed_url || '#'}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={`text-sm font-medium ${
+                                      m.signed_url ? 'text-blue-600 hover:text-blue-900' : 'text-gray-400'
+                                    }`}
+                                  >
+                                    Download
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -368,6 +623,57 @@ function StatCard({
           </svg>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MaterialUploader({
+  disabled,
+  onUpload,
+}: {
+  disabled: boolean;
+  onUpload: (file: File, title?: string) => void | Promise<void>;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState('');
+
+  return (
+    <div className="flex flex-col md:flex-row md:items-end gap-3">
+      <div className="flex-1">
+        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+          Upload material
+        </label>
+        <input
+          type="file"
+          className="block w-full text-sm text-gray-700"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          disabled={disabled}
+        />
+      </div>
+      <div className="flex-1">
+        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+          Title (optional)
+        </label>
+        <input
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          placeholder="e.g., Slides, Notes, Recording link"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          disabled={disabled}
+        />
+      </div>
+      <button
+        className="rounded-md bg-gray-900 text-white px-4 py-2 text-sm font-medium hover:bg-black disabled:opacity-50"
+        disabled={disabled || !file}
+        onClick={async () => {
+          if (!file) return;
+          await onUpload(file, title || undefined);
+          setFile(null);
+          setTitle('');
+        }}
+      >
+        {disabled ? 'Uploading…' : 'Upload'}
+      </button>
     </div>
   );
 }

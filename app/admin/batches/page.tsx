@@ -29,10 +29,20 @@ interface Course {
   code: string;
 }
 
+interface Teacher {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  roles: string[];
+  is_active: boolean;
+}
+
 export default function AdminBatchesPage() {
   const router = useRouter();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -44,10 +54,12 @@ export default function AdminBatchesPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [teacherIds, setTeacherIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchBatches();
     fetchCourses();
+    fetchTeachers();
   }, []);
 
   const fetchBatches = async () => {
@@ -83,6 +95,22 @@ export default function AdminBatchesPage() {
     }
   };
 
+  const fetchTeachers = async () => {
+    try {
+      const response = await fetch('/api/institute/users');
+      const data = await response.json();
+      if (!response.ok) return;
+      const all = (data.data || []) as Teacher[];
+      setTeachers(
+        all
+          .filter((u) => (u.roles || []).includes('TEACHER'))
+          .filter((u) => u.is_active !== false)
+      );
+    } catch {
+      // ignore
+    }
+  };
+
   const handleCreateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
@@ -100,6 +128,7 @@ export default function AdminBatchesPage() {
           startDate,
           endDate,
           isActive,
+          teacherIds,
         }),
       });
 
@@ -115,6 +144,7 @@ export default function AdminBatchesPage() {
       setStartDate('');
       setEndDate('');
       setIsActive(true);
+      setTeacherIds([]);
       setShowCreateForm(false);
       fetchBatches();
     } catch (err) {
@@ -241,6 +271,38 @@ export default function AdminBatchesPage() {
                 />
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Assign Teachers <span className="text-gray-400">(recommended)</span>
+              </label>
+              <select
+                multiple
+                value={teacherIds}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions).map((o) => o.value);
+                  setTeacherIds(selected);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {teachers.length === 0 ? (
+                  <option value="" disabled>
+                    No teachers found
+                  </option>
+                ) : (
+                  teachers.map((t) => {
+                    const name = `${t.first_name || ''} ${t.last_name || ''}`.trim() || t.email;
+                    return (
+                      <option key={t.id} value={t.id}>
+                        {name} ({t.email})
+                      </option>
+                    );
+                  })
+                )}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Teachers only see batches they are assigned to.
+              </p>
+            </div>
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -263,6 +325,7 @@ export default function AdminBatchesPage() {
                   setStartDate('');
                   setEndDate('');
                   setIsActive(true);
+                  setTeacherIds([]);
                   setError('');
                 }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

@@ -7,12 +7,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
 import { requireTenantApiContext } from '@/lib/api/context';
 import {
   formatErrorResponse,
 } from '@/lib/errors/api-errors';
-import { verifySuperAdmin } from '@/lib/auth/verify-super-admin';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/teacher/dashboard
@@ -28,10 +27,7 @@ export async function GET(request: NextRequest) {
   try {
     const { instituteId, session } = await requireTenantApiContext(request);
     const userId = session.userId;
-
-    // Verify user is SUPER_ADMIN or has TEACHER role
-    // RLS will enforce this, but we check here for better error messages
-    const isSuperAdmin = await verifySuperAdmin(userId);
+    const supabase = await createSupabaseServerClient();
     
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -40,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     // Build query for assigned batches
     // RLS will automatically filter to batches where teacher is assigned
-    let batchesQuery = supabaseAdmin
+    let batchesQuery = supabase
       .from('batches')
       .select(`
         id,
@@ -54,9 +50,6 @@ export async function GET(request: NextRequest) {
           name,
           code,
           description
-        ),
-        batch_teachers!inner(
-          teacher_id
         )
       `)
       .eq('institute_id', instituteId)
@@ -89,7 +82,7 @@ export async function GET(request: NextRequest) {
     // Get enrolled students count for each batch
     const batchIds = batches.map((b) => b.id);
 
-    const { data: enrollments, error: enrollmentsError } = await supabaseAdmin
+    const { data: enrollments, error: enrollmentsError } = await supabase
       .from('batch_students')
       .select('batch_id, status')
       .in('batch_id', batchIds)
@@ -117,7 +110,7 @@ export async function GET(request: NextRequest) {
     let studentsData: Record<string, any[]> = {};
     
     if (includeStudents) {
-      const { data: students, error: studentsError } = await supabaseAdmin
+      const { data: students, error: studentsError } = await supabase
         .from('batch_students')
         .select(`
           batch_id,
