@@ -112,7 +112,7 @@ export function isReservedSubdomain(subdomain: string): boolean {
     'localhost',
     'staging',
     'dev',
-    'test',
+    // 'test' removed - can be used as institute subdomain
     'demo',
     'support',
     'help',

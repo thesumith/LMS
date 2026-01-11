@@ -107,13 +107,25 @@ export async function middleware(request: NextRequest) {
   const subdomain = subdomainInfo.subdomain;
   
   if (!subdomain) {
-    // Invalid subdomain format
-    return NextResponse.redirect(new URL('/invalid-subdomain', request.url));
+    // Invalid subdomain format - redirect to main domain home
+    const currentUrl = new URL(request.url);
+    const hostnameParts = currentUrl.hostname.split('.');
+    const isLocalhost = hostnameParts.includes('localhost') || hostnameParts.includes('127.0.0.1');
+    const mainHostname = isLocalhost ? 'localhost' : hostnameParts.slice(-2).join('.');
+    const mainDomainUrl = `${currentUrl.protocol}//${mainHostname}${currentUrl.port ? `:${currentUrl.port}` : ''}/`;
+    return NextResponse.redirect(new URL(mainDomainUrl));
   }
   
   // Check if subdomain is reserved
   if (isReservedSubdomain(subdomain)) {
-    return NextResponse.redirect(new URL('/invalid-subdomain', request.url));
+    // Redirect to main domain to avoid infinite loop
+    const currentUrl = new URL(request.url);
+    // Extract main domain by removing subdomain prefix
+    const hostnameParts = currentUrl.hostname.split('.');
+    const isLocalhost = hostnameParts.includes('localhost') || hostnameParts.includes('127.0.0.1');
+    const mainHostname = isLocalhost ? 'localhost' : hostnameParts.slice(-2).join('.');
+    const mainDomainUrl = `${currentUrl.protocol}//${mainHostname}${currentUrl.port ? `:${currentUrl.port}` : ''}/`;
+    return NextResponse.redirect(new URL(mainDomainUrl));
   }
   
   // Step 4: Validate institute
