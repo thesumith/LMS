@@ -93,12 +93,12 @@ export function Sidebar({ items }: SidebarProps) {
   const { isCollapsed } = useSidebar();
 
   return (
-    <aside className={`bg-white border-r border-gray-200 min-h-screen flex flex-col transition-all duration-300 ${
+    <aside className={`bg-white border-r border-gray-200 min-h-screen flex flex-col transition-all duration-300 dark:bg-gray-900 dark:border-gray-800 ${
       isCollapsed ? 'w-16' : 'w-64'
     }`}>
       {/* Logo/Brand Section */}
       <div
-        className={`border-b border-gray-200 h-16 flex items-center transition-all duration-300 ${
+        className={`border-b border-gray-200 h-16 flex items-center transition-all duration-300 dark:border-gray-800 ${
           isCollapsed ? 'px-3' : 'px-6'
         }`}
       >
@@ -110,10 +110,10 @@ export function Sidebar({ items }: SidebarProps) {
           </div>
           {!isCollapsed && (
             <div className="overflow-hidden">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Krrch LMS
               </h2>
-              <p className="text-xs text-gray-500">Learning Management</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Learning Management</p>
             </div>
           )}
         </div>
@@ -130,19 +130,23 @@ export function Sidebar({ items }: SidebarProps) {
               title={isCollapsed ? item.name : undefined}
               className={`group relative flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} ${isCollapsed ? 'px-3' : 'px-3'} py-2.5 rounded-lg transition-colors duration-150 ${
                 isActive
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300'
+                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'
               }`}
             >
               {/* Icon */}
-              <span className={`flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-600 group-hover:text-gray-900'}`}>
+              <span
+                className={`flex-shrink-0 ${
+                  isActive ? 'text-blue-600 dark:text-blue-300' : 'text-gray-600 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-gray-100'
+                }`}
+              >
                 {item.icon ? getIcon(item.icon) : <DashboardIcon />}
               </span>
               
               {/* Label */}
               {!isCollapsed && (
                 <span className={`text-sm font-medium whitespace-nowrap ${
-                  isActive ? 'text-blue-600 font-semibold' : 'text-gray-700'
+                  isActive ? 'text-blue-600 font-semibold dark:text-blue-300' : 'text-gray-700 dark:text-gray-200'
                 }`}>
                   {item.name}
                 </span>
@@ -150,7 +154,7 @@ export function Sidebar({ items }: SidebarProps) {
               
               {/* Tooltip for collapsed state */}
               {isCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1.5 bg-gray-900 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                <div className="absolute left-full ml-2 px-2 py-1.5 bg-gray-900 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 dark:bg-black">
                   {item.name}
                   <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
                 </div>
@@ -162,8 +166,8 @@ export function Sidebar({ items }: SidebarProps) {
 
       {/* Footer */}
       {!isCollapsed && (
-        <div className="px-6 py-4 border-t border-gray-200">
-          <div className="text-xs text-gray-500 text-center">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
             <p>© 2026 Krrch LMS</p>
             <p className="mt-1">Multi-Tenant SaaS</p>
           </div>

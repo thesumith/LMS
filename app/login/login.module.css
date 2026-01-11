@@ -27,6 +27,13 @@
 }
 
 .root :global(.digital-rain-overlay) {
+  background: linear-gradient(rgba(246, 246, 248, 0.92), rgba(246, 246, 248, 0.92)),
+    url("https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80");
+  background-size: cover;
+  background-blend-mode: multiply;
+}
+
+:global(.dark) .root :global(.digital-rain-overlay) {
   background: linear-gradient(rgba(19, 16, 34, 0.95), rgba(19, 16, 34, 0.95)),
     url("https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80");
   background-size: cover;

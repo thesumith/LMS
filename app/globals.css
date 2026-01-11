@@ -19,3 +19,50 @@ body {
   }
 }
 
+/* Dark-mode "whole tool" compatibility layer:
+   Many pages/components use fixed light utility classes (bg-white/text-gray-900/etc).
+   These overrides ensure the app still looks correctly themed in dark mode without
+   having to refactor every page immediately. */
+@layer utilities {
+  .dark .bg-gray-50 {
+    @apply bg-gray-950;
+  }
+  .dark .bg-white {
+    @apply bg-gray-900;
+  }
+  .dark .bg-gray-100 {
+    @apply bg-gray-800;
+  }
+
+  .dark .border-gray-200 {
+    @apply border-gray-800;
+  }
+  .dark .border-gray-300 {
+    @apply border-gray-700;
+  }
+
+  .dark .text-gray-900 {
+    @apply text-gray-100;
+  }
+  .dark .text-gray-700 {
+    @apply text-gray-200;
+  }
+  .dark .text-gray-600 {
+    @apply text-gray-300;
+  }
+  .dark .text-gray-500 {
+    @apply text-gray-400;
+  }
+
+  /* Hover variants Tailwind generates as escaped class names */
+  .dark .hover\:bg-gray-100:hover {
+    @apply bg-gray-800;
+  }
+  .dark .hover\:bg-gray-50:hover {
+    @apply bg-gray-900;
+  }
+  .dark .hover\:text-gray-900:hover {
+    @apply text-gray-100;
+  }
+}
+

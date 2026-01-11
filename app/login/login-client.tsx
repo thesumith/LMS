@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import styles from './login.module.css';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 export default function LoginClient() {
   const searchParams = useSearchParams();
@@ -92,11 +93,14 @@ export default function LoginClient() {
   };
 
   return (
-    <div className={`dark ${styles.root}`}>
+    <div className={styles.root}>
       <div
         className="bg-[#f6f6f8] dark:bg-[#131022] min-h-screen flex items-center justify-center p-4 digital-rain-overlay"
         data-alt="Abstract dark digital grid with subtle code patterns"
       >
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
         {/* Main Terminal Container */}
         <div className="layout-container flex h-full grow flex-col items-center justify-center w-full max-w-[1200px]">
           <div className="layout-content-container flex flex-col w-full max-w-[560px] bg-[#1d1c27]/80 backdrop-blur-md border border-[#3f3b54] rounded-xl overflow-hidden terminal-glow">
