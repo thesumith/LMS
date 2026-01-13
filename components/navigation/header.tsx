@@ -35,7 +35,7 @@ export function Header({ userEmail, userName }: HeaderProps) {
         // Clear client-side session
         const supabase = createSupabaseClient();
         await supabase.auth.signOut();
-        
+
         // Redirect to login
         router.push('/login');
         router.refresh();
@@ -90,23 +90,8 @@ export function Header({ userEmail, userName }: HeaderProps) {
               )}
             </svg>
           </button>
-          
-          {/* Search (optional, can be expanded later) */}
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Search..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-blue-500"
-                disabled
-              />
-            </div>
-          </div>
+
+
         </div>
 
         {/* Right Section - User Profile & Actions */}
@@ -131,18 +116,18 @@ export function Header({ userEmail, userName }: HeaderProps) {
               <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                 {getInitials(userEmail, userName)}
               </div>
-              
+
               {/* User Info */}
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-gray-900">{displayName}</p>
                 <p className="text-xs text-gray-500">{userEmail}</p>
               </div>
-              
+
               {/* Dropdown Arrow */}
-              <svg 
+              <svg
                 className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}
-                fill="none" 
-                stroke="currentColor" 
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -157,7 +142,7 @@ export function Header({ userEmail, userName }: HeaderProps) {
                   className="fixed inset-0 z-10"
                   onClick={() => setShowDropdown(false)}
                 />
-                
+
                 {/* Dropdown Content */}
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20 dark:bg-gray-900 dark:border-gray-800">
                   {/* User Info Section */}
