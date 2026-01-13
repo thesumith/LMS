@@ -1,7 +1,7 @@
 /**
  * Dashboard Layout
  * 
- * Shared layout wrapper for dashboard pages with sidebar and header.
+ * Responsive layout wrapper for dashboard pages with sidebar, header, and mobile optimizations.
  */
 
 import { headers } from 'next/headers';
@@ -28,11 +28,11 @@ export async function DashboardLayout({ children, navItems }: DashboardLayoutPro
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
         <Sidebar items={sidebarItems} />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <Header userEmail={userEmail || undefined} />
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto scroll-container main-content-area">
             {children}
           </main>
         </div>
@@ -40,4 +40,3 @@ export async function DashboardLayout({ children, navItems }: DashboardLayoutPro
     </SidebarProvider>
   );
 }
-

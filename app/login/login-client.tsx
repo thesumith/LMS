@@ -95,15 +95,15 @@ export default function LoginClient() {
   return (
     <div className={styles.root}>
       <div
-        className="bg-[#f6f6f8] dark:bg-[#131022] min-h-screen flex items-center justify-center p-4 digital-rain-overlay"
+        className="bg-[#f6f6f8] dark:bg-[#131022] min-h-screen flex items-center justify-center p-4 safe-area-top safe-area-bottom digital-rain-overlay"
         data-alt="Abstract dark digital grid with subtle code patterns"
       >
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-50 safe-area-top safe-area-right">
           <ThemeToggle />
         </div>
         {/* Main Terminal Container */}
         <div className="layout-container flex h-full grow flex-col items-center justify-center w-full max-w-[1200px]">
-          <div className="layout-content-container flex flex-col w-full max-w-[560px] bg-[#1d1c27]/80 backdrop-blur-md border border-[#3f3b54] rounded-xl overflow-hidden terminal-glow">
+          <div className="layout-content-container flex flex-col w-full max-w-[560px] bg-[#1d1c27]/80 backdrop-blur-md border border-[#3f3b54] rounded-2xl md:rounded-xl overflow-hidden terminal-glow mx-2">
             {/* Terminal Header Bar */}
             <div className="flex items-center justify-between px-4 py-3 bg-[#121118] border-b border-[#3f3b54]">
               <div className="flex gap-2">
@@ -118,22 +118,22 @@ export default function LoginClient() {
             </div>
 
             {/* Page Heading Component */}
-            <div className="flex flex-wrap justify-between gap-3 p-6 pt-8">
-              <div className="flex min-w-72 flex-col gap-2">
-                <p className="text-white text-3xl font-black leading-tight tracking-[-0.033em]">
-                  root@tech-lms:~/login$ <span className="animate-pulse">_</span>
+            <div className="flex flex-wrap justify-between gap-3 p-4 md:p-6 pt-6 md:pt-8">
+              <div className="flex min-w-0 flex-col gap-2 w-full">
+                <p className="text-white text-xl md:text-3xl font-black leading-tight tracking-[-0.033em] break-all">
+                  root@lms:~$ <span className="animate-pulse">_</span>
                 </p>
-                <p className="text-[#a19db9] text-sm font-normal leading-normal tracking-widest">
-                  SYSTEM: READY | CONNECTION: ENCRYPTED
+                <p className="text-[#a19db9] text-xs md:text-sm font-normal leading-normal tracking-widest">
+                  SYSTEM: READY | ENCRYPTED
                 </p>
               </div>
             </div>
 
-            {/* Image/Hero Area */}
-            <div className="px-6">
+            {/* Image/Hero Area - Hidden on small mobile */}
+            <div className="px-4 md:px-6 hidden sm:block">
               <div className="py-3">
                 <div
-                  className="w-full bg-center bg-no-repeat bg-cover flex flex-col justify-end overflow-hidden bg-[#121118] rounded-lg min-h-40 border border-[#3f3b54]/50 relative"
+                  className="w-full bg-center bg-no-repeat bg-cover flex flex-col justify-end overflow-hidden bg-[#121118] rounded-lg min-h-32 md:min-h-40 border border-[#3f3b54]/50 relative"
                   data-alt="Monochrome close up of high tech computer circuit lines"
                   style={{
                     backgroundImage:
@@ -152,7 +152,7 @@ export default function LoginClient() {
 
             <form onSubmit={handleSubmit}>
               {/* Form Fields */}
-              <div className="flex flex-col gap-2 px-6 py-4">
+              <div className="flex flex-col gap-2 px-4 md:px-6 py-4">
                 {error ? (
                   <div className="border border-red-500/30 bg-red-500/10 text-red-200 rounded-lg p-3 text-xs font-mono tracking-wide">
                     {error}
@@ -161,14 +161,14 @@ export default function LoginClient() {
 
                 {/* TextField: User ID */}
                 <div className="flex flex-wrap items-end gap-4 py-2">
-                  <label className="flex flex-col min-w-40 flex-1">
+                  <label className="flex flex-col min-w-0 flex-1">
                     <p className="text-white text-xs font-bold leading-normal pb-2 tracking-[0.2em] uppercase opacity-70">
-                      User_Identity
+                      Email
                     </p>
                     <div className="flex w-full flex-1 items-stretch rounded-lg group">
                       <input
-                        className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-[#3713ec] border border-[#3f3b54] bg-[#121118] focus:border-[#3713ec] h-14 placeholder:text-[#3f3b54] p-[15px] rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        placeholder="admin_dev_01"
+                        className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-[#3713ec] border border-[#3f3b54] bg-[#121118] focus:border-[#3713ec] h-12 md:h-14 placeholder:text-[#3f3b54] p-3 md:p-[15px] rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-target"
+                        placeholder="admin@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         autoComplete="email"
@@ -176,7 +176,7 @@ export default function LoginClient() {
                         disabled={loading}
                         required
                       />
-                      <div className="text-[#a19db9] flex border border-[#3f3b54] bg-[#121118] items-center justify-center pr-[15px] rounded-r-lg border-l-0 group-focus-within:border-[#3713ec] group-focus-within:text-[#3713ec] transition-all">
+                      <div className="text-[#a19db9] flex border border-[#3f3b54] bg-[#121118] items-center justify-center pr-3 md:pr-[15px] rounded-r-lg border-l-0 group-focus-within:border-[#3713ec] group-focus-within:text-[#3713ec] transition-all">
                         <span className="material-symbols-outlined">terminal</span>
                       </div>
                     </div>
@@ -185,13 +185,13 @@ export default function LoginClient() {
 
                 {/* TextField: Password */}
                 <div className="flex flex-wrap items-end gap-4 py-2">
-                  <label className="flex flex-col min-w-40 flex-1">
+                  <label className="flex flex-col min-w-0 flex-1">
                     <p className="text-white text-xs font-bold leading-normal pb-2 tracking-[0.2em] uppercase opacity-70">
-                      Encrypted_Access_Key
+                      Password
                     </p>
                     <div className="flex w-full flex-1 items-stretch rounded-lg group">
                       <input
-                        className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-[#3713ec] border border-[#3f3b54] bg-[#121118] focus:border-[#3713ec] h-14 placeholder:text-[#3f3b54] p-[15px] rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-1 focus:ring-[#3713ec] border border-[#3f3b54] bg-[#121118] focus:border-[#3713ec] h-12 md:h-14 placeholder:text-[#3f3b54] p-3 md:p-[15px] rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal transition-all disabled:opacity-50 disabled:cursor-not-allowed touch-target"
                         placeholder="••••••••"
                         type="password"
                         value={password}
@@ -200,7 +200,7 @@ export default function LoginClient() {
                         disabled={loading}
                         required
                       />
-                      <div className="text-[#a19db9] flex border border-[#3f3b54] bg-[#121118] items-center justify-center pr-[15px] rounded-r-lg border-l-0 group-focus-within:border-[#3713ec] group-focus-within:text-[#3713ec] transition-all">
+                      <div className="text-[#a19db9] flex border border-[#3f3b54] bg-[#121118] items-center justify-center pr-3 md:pr-[15px] rounded-r-lg border-l-0 group-focus-within:border-[#3713ec] group-focus-within:text-[#3713ec] transition-all">
                         <span className="material-symbols-outlined">key</span>
                       </div>
                     </div>
@@ -209,23 +209,23 @@ export default function LoginClient() {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col gap-4 px-6 pb-8 pt-2">
+              <div className="flex flex-col gap-4 px-4 md:px-6 pb-6 md:pb-8 pt-2">
                 {/* SingleButton: Login */}
-                <div className="flex py-3">
+                <div className="flex py-2 md:py-3">
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-14 px-5 flex-1 bg-[#3713ec] text-white text-base font-bold leading-normal tracking-[0.1em] hover:bg-[#3713ec]/90 transition-all border border-white/10 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="group flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 md:h-14 px-5 flex-1 bg-[#3713ec] text-white text-sm md:text-base font-bold leading-normal tracking-[0.1em] hover:bg-[#3713ec]/90 active:bg-[#3713ec]/80 transition-all border border-white/10 disabled:opacity-60 disabled:cursor-not-allowed touch-target"
                   >
                     <span className="truncate flex items-center gap-2">
                       <span className="material-symbols-outlined text-sm">settings_power</span>
-                      {loading ? '[ AUTHENTICATING… ]' : '[ EXECUTE_AUTH_SESSION ]'}
+                      {loading ? 'Authenticating...' : 'Sign In'}
                     </span>
                   </button>
                 </div>
 
-                {/* Biometric Shortcut Placeholder */}
-                <div className="flex items-center justify-center gap-6 pt-2">
+                {/* Biometric Shortcut - Simplified on mobile */}
+                <div className="hidden sm:flex items-center justify-center gap-6 pt-2">
                   <button
                     type="button"
                     className="flex items-center gap-2 text-[#a19db9] hover:text-[#3713ec] transition-colors text-xs font-bold tracking-widest uppercase group"
@@ -233,7 +233,7 @@ export default function LoginClient() {
                     <div className="p-2 border border-[#3f3b54] rounded-lg group-hover:border-[#3713ec] transition-all bg-[#121118]">
                       <span className="material-symbols-outlined">fingerprint</span>
                     </div>
-                    Biometric_Scan
+                    Biometric
                   </button>
                   <div className="h-8 w-[1px] bg-[#3f3b54]"></div>
                   <button
@@ -243,19 +243,19 @@ export default function LoginClient() {
                     <div className="p-2 border border-[#3f3b54] rounded-lg group-hover:border-[#3713ec] transition-all bg-[#121118]">
                       <span className="material-symbols-outlined">face_unlock</span>
                     </div>
-                    Retina_ID
+                    Face ID
                   </button>
                 </div>
 
-                {/* Footer Links */}
-                <div className="flex justify-between items-center mt-6 text-[10px] font-mono text-[#3f3b54] border-t border-[#3f3b54] pt-4 uppercase tracking-tighter">
-                  <a className="hover:text-[#a19db9]" href="#">
-                    --help / recover_pass
+                {/* Footer Links - Stacked on mobile */}
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 mt-4 md:mt-6 text-[10px] font-mono text-[#3f3b54] border-t border-[#3f3b54] pt-4 uppercase tracking-tighter">
+                  <a className="hover:text-[#a19db9] touch-target" href="#">
+                    Forgot Password?
                   </a>
-                  <a className="hover:text-[#a19db9]" href="#">
-                    mkdir -u / create_account
+                  <a className="hover:text-[#a19db9] touch-target" href="#">
+                    Create Account
                   </a>
-                  <span className="text-[#3f3b54]">v2.4.0-stable</span>
+                  <span className="text-[#3f3b54] hidden sm:inline">v2.4.0</span>
                 </div>
               </div>
             </form>

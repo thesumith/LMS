@@ -1,7 +1,7 @@
 /**
  * Sidebar Navigation Component
  * 
- * Client component for sidebar navigation menu with Google Material Design styling.
+ * Responsive sidebar with mobile drawer support and bottom navigation.
  */
 
 'use client';
@@ -9,7 +9,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useSidebar } from './sidebar-context';
 
 interface NavItem {
@@ -71,10 +71,23 @@ const InstitutesIcon = () => (
   </svg>
 );
 
+const SettingsIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+const GradesIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+  </svg>
+);
+
 // Icon mapping function
 const getIcon = (iconName: string | ReactNode) => {
   if (typeof iconName !== 'string') return iconName;
-  
+
   const iconMap: Record<string, ReactNode> = {
     '📊': <DashboardIcon />,
     '👥': <UsersIcon />,
@@ -84,26 +97,34 @@ const getIcon = (iconName: string | ReactNode) => {
     '✅': <AttendanceIcon />,
     '🎓': <CertificatesIcon />,
     '🏢': <InstitutesIcon />,
+    '⚙️': <SettingsIcon />,
+    '📈': <GradesIcon />,
   };
-  
+
   return iconMap[iconName] || <DashboardIcon />;
 };
 
 export function Sidebar({ items }: SidebarProps) {
   const pathname = usePathname();
-  const { isCollapsed } = useSidebar();
+  const { isCollapsed, isMobileOpen, closeMobileMenu, isMobile } = useSidebar();
 
-  return (
-    <aside className={`bg-white border-r border-gray-200 min-h-screen flex flex-col transition-all duration-300 dark:bg-gray-900 dark:border-gray-800 ${
-      isCollapsed ? 'w-16' : 'w-64'
-    }`}>
+  // Close mobile menu when navigating
+  useEffect(() => {
+    if (isMobile && isMobileOpen) {
+      closeMobileMenu();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // Desktop sidebar
+  const SidebarContent = () => (
+    <>
       {/* Logo/Brand Section */}
       <div
-        className={`border-b border-gray-200 h-16 flex items-center transition-all duration-300 dark:border-gray-800 ${
-          isCollapsed ? 'px-3' : 'px-6'
-        }`}
+        className={`border-b border-gray-200 h-16 flex items-center transition-all duration-300 dark:border-gray-800 ${isCollapsed && !isMobile ? 'px-3' : 'px-6'
+          }`}
       >
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
+        <div className={`flex items-center ${isCollapsed && !isMobile ? 'justify-center' : 'space-x-3'}`}>
           <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 relative">
             <Image
               src="/logo.png"
@@ -113,7 +134,7 @@ export function Sidebar({ items }: SidebarProps) {
               className="object-contain dark:brightness-0 dark:invert"
             />
           </div>
-          {!isCollapsed && (
+          {(!isCollapsed || isMobile) && (
             <div className="overflow-hidden">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Krrch LMS
@@ -125,40 +146,37 @@ export function Sidebar({ items }: SidebarProps) {
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto scroll-container">
         {items.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
           return (
             <Link
               key={item.href}
               href={item.href}
-              title={isCollapsed ? item.name : undefined}
-              className={`group relative flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} ${isCollapsed ? 'px-3' : 'px-3'} py-2.5 rounded-lg transition-colors duration-150 ${
-                isActive
+              title={isCollapsed && !isMobile ? item.name : undefined}
+              className={`touch-ripple group relative flex items-center ${isCollapsed && !isMobile ? 'justify-center' : 'space-x-3'} ${isCollapsed && !isMobile ? 'px-3' : 'px-3'} py-3 md:py-2.5 rounded-lg transition-colors duration-150 touch-target ${isActive
                   ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'
-              }`}
+                  : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-700'
+                }`}
             >
               {/* Icon */}
               <span
-                className={`flex-shrink-0 ${
-                  isActive ? 'text-blue-600 dark:text-blue-300' : 'text-gray-600 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-gray-100'
-                }`}
+                className={`flex-shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-300' : 'text-gray-600 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-gray-100'
+                  }`}
               >
                 {item.icon ? getIcon(item.icon) : <DashboardIcon />}
               </span>
-              
+
               {/* Label */}
-              {!isCollapsed && (
-                <span className={`text-sm font-medium whitespace-nowrap ${
-                  isActive ? 'text-blue-600 font-semibold dark:text-blue-300' : 'text-gray-700 dark:text-gray-200'
-                }`}>
+              {(!isCollapsed || isMobile) && (
+                <span className={`text-sm font-medium whitespace-nowrap ${isActive ? 'text-blue-600 font-semibold dark:text-blue-300' : 'text-gray-700 dark:text-gray-200'
+                  }`}>
                   {item.name}
                 </span>
               )}
-              
-              {/* Tooltip for collapsed state */}
-              {isCollapsed && (
+
+              {/* Tooltip for collapsed state (desktop only) */}
+              {isCollapsed && !isMobile && (
                 <div className="absolute left-full ml-2 px-2 py-1.5 bg-gray-900 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 dark:bg-black">
                   {item.name}
                   <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
@@ -170,7 +188,7 @@ export function Sidebar({ items }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      {!isCollapsed && (
+      {(!isCollapsed || isMobile) && (
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800">
           <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
             <p>© 2026 Krrch LMS</p>
@@ -178,6 +196,78 @@ export function Sidebar({ items }: SidebarProps) {
           </div>
         </div>
       )}
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      <div
+        className={`mobile-overlay md:hidden ${isMobileOpen ? 'active' : ''}`}
+        onClick={closeMobileMenu}
+        aria-hidden="true"
+      />
+
+      {/* Mobile Sidebar (Drawer) */}
+      <aside
+        className={`mobile-sidebar md:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white dark:bg-gray-900 flex flex-col safe-area-left ${isMobileOpen ? 'open' : ''
+          }`}
+      >
+        {/* Close button for mobile */}
+        <button
+          onClick={closeMobileMenu}
+          className="absolute top-4 right-4 p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 touch-target"
+          aria-label="Close menu"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <SidebarContent />
+      </aside>
+
+      {/* Desktop Sidebar */}
+      <aside className={`hidden md:flex bg-white border-r border-gray-200 min-h-screen flex-col transition-all duration-300 dark:bg-gray-900 dark:border-gray-800 ${isCollapsed ? 'w-16' : 'w-64'
+        }`}>
+        <SidebarContent />
+      </aside>
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNavigation items={items} />
+    </>
+  );
+}
+
+// Bottom Navigation Component for Mobile
+function BottomNavigation({ items }: { items: NavItem[] }) {
+  const pathname = usePathname();
+
+  // Show only the first 5 items in bottom nav (or 4 + More)
+  const visibleItems = items.slice(0, 5);
+
+  return (
+    <nav className="bottom-nav md:hidden safe-area-bottom">
+      {visibleItems.map((item) => {
+        const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex flex-col items-center justify-center flex-1 py-2 px-1 transition-colors touch-target ${isActive
+                ? 'text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 dark:text-gray-400'
+              }`}
+          >
+            <span className={`mb-1 ${isActive ? 'scale-110' : ''} transition-transform`}>
+              {item.icon ? getIcon(item.icon) : <DashboardIcon />}
+            </span>
+            <span className={`text-[10px] font-medium truncate max-w-full ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
+              }`}>
+              {item.name.split(' ')[0]}
+            </span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
