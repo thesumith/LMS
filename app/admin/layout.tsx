@@ -16,6 +16,7 @@ export default function AdminLayout({
     { name: 'Users', href: '/admin/users', icon: '👥' },
     { name: 'Courses', href: '/admin/courses', icon: '📚' },
     { name: 'Batches', href: '/admin/batches', icon: '📅' },
+    { name: 'Enrollments', href: '/admin/enrollments', icon: '✅' },
     { name: 'Certificates', href: '/admin/certificates', icon: '🎓' },
   ];
 
